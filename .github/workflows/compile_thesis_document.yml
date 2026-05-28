@@ -1,0 +1,26 @@
+name: Automatic Master's Thesis document compiler
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Clone Repo
+        uses: actions/checkout@v4
+
+      - name: 2. Compile Document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: MasThesis_Document_Main.tex
+          compiler: latexmk
+          args: -pdf -interaction=nonstopmode -file-line-error
+
+      - name: 3. Save PDF in actions section
+        uses: actions/upload-artifact@v3
+        with:
+          name: Theis_Document_GH_Compiler
+          path: MasThesis_Document_Main.pdf
