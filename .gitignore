@@ -19,6 +19,7 @@
 *.mtc
 *.mtc0
 *.run.xml
+*.pdf
 
 # Reference files (legacy)
 Apuntes - Electronica.tex
