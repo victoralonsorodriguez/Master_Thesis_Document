@@ -1,0 +1,29 @@
+# LaTX auxiliar files
+*.aux
+*.bbl
+*.blg
+*.brf
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bcf
+*.maf
+*.mtc
+*.mtc0
+*.run.xml
+
+# Reference files (legacy)
+Apuntes - Electronica.tex
+Preambulo_electronica.tex
+BachThesis_Document_Main.tex
+
+# MacOS files
+.DS_Store
