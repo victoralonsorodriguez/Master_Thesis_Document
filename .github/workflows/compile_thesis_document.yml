@@ -20,7 +20,7 @@ jobs:
           args: -pdf -interaction=nonstopmode -file-line-error
 
       - name: 3. Save PDF in actions section
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Theis_Document_GH_Compiler
           path: MasThesis_Document_Main.pdf
