@@ -1,2 +1,295 @@
-% !TeX spellcheck = en_GB
-Test Development 
+% !TeX spellcheck = en_US
+
+This section details the technical formulation of the \textbf{AstroPT} environment, describing the supercomputing computational infrastructure and pretraining scale, the dataset normalization and scale invariance procedure, the mathematical tokenization scheme for the visual and spectroscopic domains, and the scientific justification of its parameter regime based on empirical scaling laws.
+
+\subsection{Computation Resources and Pretraining Scale}
+
+The development of multimodal foundational models (MFMs) in astrophysics demands a massive supercomputing infrastructure. Unlike training small models, pretraining foundational models requires concurrently scaling model parameters, datasets, and computational capacity in FLOPS (Floating Point Operations Per Second) following strict scaling laws.
+
+The following table compares model parameters, data scale, and hardware demands for training our multimodal \textit{AstroPT} model against other foundational models in recent astrophysical literature:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{4.2cm}|p{2.6cm}|p{2.6cm}|p{2.6cm}|p{2.8cm}|}
+\hline
+\textbf{Parameter / Metric} & \textbf{AstroCLIP \autocite{ar:astroclip}} & \textbf{AION-1 \autocite{ar:aion-1}} & \textbf{AstroPT \autocite{ar:astropt}} & \textbf{Proposed Model (Multimodal AstroPT)} \\ \hline
+\textbf{Model Size} & $\sim$150 million parameters & 300M to 3.100 billion param. & 1M to 2.100 billion param. & $\sim$100.75 million parameters \\ \hline
+\textbf{Dataset} & $\sim$1.5 million pairs & 200 million objects & 8.6 million images & 137\,661 unified pairs \\ \hline
+\textbf{Training Hardware} & 4x NVIDIA H100 & Hundreds of H100/A100 GPUs & NVIDIA A100/H100 GPUs & 4x NVIDIA A100 GPUs (\autocite{ar:teidehpc}) \\ \hline
+\textbf{Estimated Consumption} & $\sim$400 kWh & Hundreds of MWh & $\sim$3,200 kWh & \textbf{Calculate} \\ \hline
+\end{tabular}
+\caption{Comparison of model parameters, data scale, and hardware demands for training AstroPT against other foundational models in recent astrophysical literature.}
+\label{tab:comparacion_modelos}
+\end{table}
+
+This computational capacity, provided by the \textit{TeideHPC} infrastructure \autocite{ar:teidehpc}, allows establishing a reusable base model. Although the initial computational cost of pretraining is high, the resulting model can be used for various downstream tasks without the need to train its layers from scratch. This optimizes resource consumption in subsequent experiments compared to repeatedly training independent supervised models.
+
+\subsection{Physical Preprocessing and Scale Invariance}
+
+One of the critical phases in the preparation of the training images consisted of normalizing the spatial scale of the galaxies. To this end, an interpolation and resampling procedure was applied to the Arrow-formatted dataset partitions. This process dynamically scales each cutout based on its effective Sérsic radius and its axis ratio, ensuring that all objects share a uniform physical and angular size within the images.
+
+Mathematically, for each galaxy with identifier \texttt{TARGETID}, a cutout window half-width in arcseconds ($\text{arcsec\_cut}$) is calculated using the resizing formula:
+
+\begin{equation}
+\text{arcsec\_cut} = C \cdot R_e \sqrt{q}
+\label{eq:arcsec_cut}
+\end{equation}
+
+where:
+
+\begin{itemize}
+\item $R_e$ is the effective Sérsic radius measured in the visible channel.
+\item $q$ is the axis ratio of the ellipse.
+\item $C = 5.0$ is a constant scaling factor used to guarantee that the galaxy is completely enclosed within the limits of the cutout, retaining both its nucleus and the diffuse emission from its peripheral regions.
+\end{itemize}
+
+Subsequently, this half-width is converted to pixels on the \textit{Euclid}/VIS grid ($hw = \text{arcsec\_cut} / 0.1$). The algorithm crops the corresponding submatrix of size $2hw \times 2hw$ pixels and resizes it back to the standard $224 \times 224$ pixel matrix using interpolation algorithms with active antialiasing filters to mitigate sampling effects. By applying this normalization, the effective radius of all galaxies in the dataset is fixed at exactly $224 / \left(2 C\right) = 22.4$ pixels along their semi-major axis, achieving a homogeneous spatial representation.
+
+This systematic interpolation introduces an artificial limitation or bias related to the physical and methodological nature of how galactic sizes are defined and measured in observational astrophysics. By normalizing to a constant pixel size, those galaxies with a very small native angular diameter (e.g., dwarf galaxies or sources at high redshift ($z$)) are massively amplified in the $224 \times 224$ pixel matrix. This makes them appear artificially large and display smoothed or pixelated textures due to the lack of high spatial frequency information. Conversely, highly resolved galaxies with large angular sizes are compressed to much smaller sizes within the cutout, losing small-scale structural details that are absorbed by pixel averaging in the downsampling process.
+
+This technical problem arises directly from the limitations of using the effective radius (or half-light radius, $R_e$) as a size metric. As noted in the literature by \textcite{ar:trujillo-2020} and \textcite{ar:buitrago-2024}, the effective radius is an arbitrary metric based on light concentration (the radius enclosing $50\%$ of the projected luminosity) and critically depends on the intrinsic luminosity and surface brightness limits of the galaxy rather than its physical limit of actual growth. Proposing alternative and physically motivated size measures that do not depend on luminosity (such as the truncation point or the peripheral stellar mass density edge) is essential in deep extragalactic analysis, but difficult to implement in large-scale automated processing schemes due to the requirement of extremely deep and noise-free imaging.
+
+Ages and absolute scales are interrelated in observational astrophysics. Despite these limitations in the visual representation of individual galaxies, the scientific decision to enforce this interpolation is based on the pursuit of scale invariance during the training of \textit{AstroPT}:
+
+\begin{itemize}
+\item \textbf{Favorable effects:} In machine learning applied to astrophysics, convolutional neural networks and vision transformers often use the scale or pixel area occupied by a source as a statistical shortcut (\textit{shortcut learning}) to infer properties such as cosmological distance or total galaxy mass, rather than learning the underlying structural physics. By forcing all galaxies to have the same effective elliptical size in the cutout, we compel the network to focus exclusively on intrinsic morphological features (such as the presence of spiral arms, light concentration rate, tidal perturbations, or merger asymmetry) regardless of their distance or redshift ($z$). This reduces the degeneracy between distance and size in the latent space and improves the transfer of morphological knowledge to downstream tasks \autocite{ar:dieleman-2015}.
+\item \textbf{Unfavorable effects:} The primary disadvantage is the loss of absolute physical scale in the visual domain of the model. Since luminosity and physical size are directly related to the mass and energy of the galaxy through fundamental empirical relations (such as the mass-size, Tully-Fisher, or Faber-Jackson relations), depriving the visual encoder of this absolute geometric scale information prevents it from directly estimating absolute physical quantities from the image without the assistance of external tabular metadata (for instance, spectroscopic redshift ($z$) or the plate scale in $\text{kpc}/\text{arcsec}$). Furthermore, resampling introduces interpolation noise (downsampling and upsampling) that limits the spatial resolution of fine morphology. For this reason, bimodal training incorporating spectra is crucial; the spectroscopic modality allows the model to retrieve and calibrate some of these physical properties correlated with the absolute scale (such as redshift ($z$)) that degrade when normalizing the images. Nonetheless, in the results section of this thesis, it will be demonstrated that despite this size normalization procedure and the consequent loss of explicit spatial scale in the images, the model is capable of learning and associating sufficiently rich correlated morphological features to accurately estimate redshift ($z$) from the images in isolation.
+\end{itemize}
+
+This normalization and invariance approach aligns with recommended practices in the design of equivariant and scale-invariant networks in computer vision \autocite{ar:weiler-2019}, where the goal is to structure feature descriptors that are immune to spatial affine transformations to optimize generalization and robustness against domain shifts.
+
+\subsection{Token Representation and Relation to Model Parameters}
+
+To project astronomical images and spectra into the multimodal transformer architecture, each physical sample in the dataset must be converted into a discrete sequence of vector descriptors or \textbf{tokens}. The specifications for this tokenization for each modality and the calculation of the total information volume of the dataset are detailed below.
+
+\subsubsection{Visual Domain Tokenization (Euclid)}
+
+The \textit{Euclid} observations consist of four filters or instrumental bands: the visible optical channel (VIS, $I_E$ band) of high spatial resolution, and the three near-infrared NISP channel bands ($Y_E$, $J_E$, and $H_E$ bands). Each image cutout of size $224 \times 224$ pixels is structured with these 4 bands stacked along the channel dimension, forming a three-dimensional tensor of dimensions $224 \times 224 \times 4$.
+
+To process this matrix using a vision encoder (Vision Transformer - ViT; \autocite{ar:dosovitskiy-2020}), the image is divided into contiguous spatial patches of size $8 \times 8$ pixels. The number of spatial patches is calculated as:
+
+\begin{equation}
+\text{Image Tokens} = \left(\dfrac{224}{8}\right) \times \left(\dfrac{224}{8}\right) = 28 \times 28 = 784 \text{ tokens}
+\label{eq:tokens_imagen}
+\end{equation}
+
+Each individual patch covers the 4 optical bands (with a raw input dimension of $8 \times 8 \times 4 = 256$ flux values). A linear projection layer projects this 256-dimensional tensor into the transformer's embedding space. Thus, each galaxy is visually represented by a fixed sequence of $784$ tokens.
+
+\subsubsection{Spectroscopic Domain Tokenization (DESI)}
+
+The \textit{DESI} spectra provide the flux distribution as a function of wavelength in the optical and near-infrared spectral range from $3600\,\text{\AA{}}$ to $9824\,\text{\AA{}}$ ($360.0\text{--}982.4\,\text{nm}$). This continuous range is instrumentally discretized into $7781$ spectral flux channels.
+
+To make this one-dimensional spectral sequence compatible with the transformer, it is grouped using a 1D patch strategy. The $7781$ channels are split into contiguous patches of 10 channels, resulting in a fixed sequence of $779$ spectral tokens per object.
+
+\subsubsection{Calculation of the Total Token Volume of the Dataset}
+
+Summing both modalities, each bimodal pair (image + spectrum) for a given galaxy is equivalent to a sequence of:
+
+\begin{equation}
+\text{Tokens per Sample} = 784\,\text{(image)} + 779\,\text{(spectrum)} = 1563\,\text{tokens}
+\label{eq:tokens_por_muestra}
+\end{equation}
+
+Multiplying this factor by the number of samples in the dataset partitions, we obtain the total token volume:
+
+\begin{itemize}
+\item \textbf{For the initial dataset ($252\,744$ samples):}
+    \begin{equation}
+    252\,744\,\text{samples} \times 1563\,\text{tokens/sample} = 395\,038\,872\,\text{tokens} \approx 395.04\,\text{million tokens}
+    \label{eq:tokens_total_inicial}
+    \end{equation}
+\item \textbf{For the final filtered and clean dataset ($137\,661$ samples):}
+    \begin{equation}
+    137\,661\,\text{samples} \times 1563\,\text{tokens/sample} = 215\,164\,143\,\text{tokens} \approx 215.16\,\text{million tokens}
+    \label{eq:tokens_total_final}
+    \end{equation}
+\end{itemize}
+
+\subsubsection{Relation to Model Parameters and Scaling Laws}
+
+According to the initialization and optimizer logs of our model, the \textit{AstroPT} architecture has a total of $100\,750\,849$ parameters ($\sim 100.75$ million), broken down as follows:
+
+\begin{itemize}
+\item \texttt{backbone\_decay} (Transformer backbone parameters with weight decay): $86\,511\,360$ parameters.
+\item \texttt{EuclidImage\_decay} (\textit{Euclid} visual encoder projection): $7\,864\,320$ parameters.
+\item \texttt{DESISpectrum\_decay} (\textit{DESI} spectral encoder projection): $6\,352\,896$ parameters.
+\item \texttt{backbone\_nodecay} (Normalization and bias parameters without weight decay): $22\,273$ parameters.
+\end{itemize}
+
+Comparing the number of model parameters ($N \approx 100.75$ million) with the number of tokens in the final clean dataset ($D \approx 215.16$ million), we observe a token-to-parameter ratio of approximately $2.1:1$.
+
+Under the Chinchilla scaling laws \autocite{ar:hoffmann-2022}, compute-optimal training from scratch requires the number of tokens to be approximately 20 times larger than the number of parameters ($D \approx 20 \cdot N$). For a model with $100.75$ million parameters, this would require a training set of at least $2.01$ billion tokens, indicating that our dataset is in a suboptimal token regime if one were to pretrain the entire transformer and its backbones from scratch in a classical autoregressive manner. To reach the optimal regime, a total of $1\,289\,199$ objects with their corresponding image-spectrum pairs would be necessary.
+
+\subsubsection{Scientific Justification and Training Regime}
+
+The reason why this token volume does not represent a bottleneck or a violation of model generalization requirements is grounded in the following design aspects of our architecture:
+
+\begin{enumerate}
+\item \textbf{Alignment and fine-tuning instead of pretraining:} Unlike foundational language models trained from scratch in a pure causal mode, our multimodal model focuses on the latent alignment of representations (via CLIP-like contrastive losses or bounded bimodal fusions). The shared latent space can be robustly structured with an order of magnitude fewer data samples, as it is not necessary for the model to learn to reconstruct complete morphologies or textures from scratch, but rather to associate preexisting semantic and physical features.
+\item \textbf{Physical observational limit of the local universe:} In observational astrophysics, it is not possible to scale the data volume arbitrarily by scraping data from the web. The $137\,661$ unified galaxies represent the complete and available actual overlap of the highest scientific quality in the combination of \textit{Euclid} MER DR1 and \textit{DESI} DR1 to date. Scaling the dataset beyond this physical limit would compromise the fidelity of the observations, introducing samples lacking spectroscopy or containing corrupted images.
+\item \textbf{Data-centric approach (quality over quantity):} In the context of scientific multimodal models, observational noise (instrumental misalignments, images with black filters, and noisy spectra) penalizes convergence much more severely than a moderate token volume. Purging more than $115\,000$ noisy objects ensures an extremely clean and physically consistent dataset, which accelerates learning and reduces overfitting by preventing the model from memorizing instrumental domain artifacts. This strategy aligns with the systematic curation methodology demonstrated by the \textit{DataComp} initiative \autocite{ar:gadre-2023}, which shows that rigorous sample quality filtering outperforms raw scaling of noisy data in terms of generalization and robustness.
+\end{enumerate}
+
+\subsection{Multimodal Adaptations of the AstroPT Architecture}
+
+To expand the capability of the \textit{AstroPT} framework from its initial unimodal design (based on autoregressive image modeling, \textcite{ar:astropt}) to a truly bimodal environment that unifies two-dimensional spatial morphology and one-dimensional spectroscopic physics, it has been necessary to introduce modifications to token processing, the self-attention scheme, and the formulation of loss functions.
+
+The only direct precedent of bimodal pretraining using \textit{Euclid} data consisted of alignment with photometry and low-spectral-resolution spectral energy distributions (SEDs) \autocite{ar:siudek-2025}. In this work, we develop a strict bimodal coupling between high-spatial-resolution optical images from \textit{Euclid} (VIS, $Y_E$, $J_E$, $H_E$) and high-resolution optical spectra from \textit{DESI} ($3600$ to $9824\,\text{\AA{}}$, distributed across $7781$ channels).
+
+The design of this architectural adaptation is detailed below, based on three pillars: token mixing, conclusions from the analysis with discrete tokenizers of \textit{AION-1}, and the design of the hybrid contrastive alignment via dual-phase attention.
+
+\subsubsection{Block-based Token Mixing}
+
+When concatenating sequences of different physical modalities in a single causal autoregressive transformer, the model can suffer from spatial ordering bias (learning only to predict the modality placed at the end based on the first, rather than capturing bidirectional correlations). To mitigate this, we implement a cross-token mixing scheme (\textit{token mixing}) using a round-robin block scheduling.
+
+Mathematically, we define the mixed sequence of length $T$ for each object as the interleaving of blocks of size $B_{\text{size}} = 64$ tokens extracted from the spatial patch sequences of \textit{Euclid} ($\mathbf{X}_{\text{img}} \in \mathbb{R}^{784 \times d_e}$) and spectral patches of \textit{DESI} ($\mathbf{X}_{\text{spec}} \in \mathbb{R}^{779 \times d_e}$):
+
+\begin{equation}
+\mathbf{X}_{\text{interleaved}} = \text{Interleave}\left(\mathbf{X}_{\text{img}}, \mathbf{X}_{\text{spec}}; B_{\text{size}} = 64\right)
+\label{eq:token_mixing}
+\end{equation}
+
+This strategy has fundamental physical implications:
+
+\begin{itemize}
+\item \textbf{Causal cross-association:} By alternating blocks of 64 visual and spectral tokens, we force the causal self-attention mechanism to predict the peripheral morphology of a galaxy conditioned on the spectroscopic emission lines of its nucleus, and vice versa, forcing direct translation between spatial morphology and the metallicity or redshift ($z$) implicit in the spectrum.
+\item \textbf{Invariance to ordering bias:} During pretraining, we activate initialization order randomization of the modality (\texttt{shuffle\_modality\_train: True}), alternating whether the sequence starts with the visual or the spectroscopic block.
+\end{itemize}
+
+\subsubsection{The Experiment with Discrete Tokenizers of AION-1}
+
+An initial design hypothesis was to employ the discrete tokenizers of the omnimodal model \textit{AION-1} \autocite{ar:aion-1} to directly encode \textit{Euclid} images and \textit{DESI} spectra into indices of a finite discrete vocabulary, reducing the physical sequence to discrete tokens similar to natural language.
+
+Due to the fact that the vision encoder of \textit{AION-1} was pretrained on the ground-based optical HSC (Hyper Suprime-Cam) survey in five photometric bands ($g, r, i, z, y$), we developed a convolutional neural adapter with 4 residual blocks and a hidden dimension of 128 to map the 4 bands of \textit{Euclid} (VIS, Y, J, H) to the 5 bands of HSC in the hyperbolic sine domain:
+
+\begin{equation}
+\mathbf{I}_{\text{HSC}} = \sinh\left(\text{ResNet}_{\text{adapter}}\left(\text{asinh}\left(\mathbf{I}_{\text{Euclid}}\right)\right)\right)
+\label{eq:hsc_adapter}
+\end{equation}
+
+However, experimental tests demonstrated that \textbf{this discrete approach was unfeasible} for our purpose, due to two critical factors:
+
+\begin{enumerate}
+\item \textbf{Quantization noise and loss of fine resolution:} The discrete vector quantizers of \textit{AION-1} group continuous morphology into discrete centroids. In deep observational astrophysics, subtle surface brightness gradients and fine structures (such as incipient spiral arms or tidal tails resulting from low-mass mergers) are eliminated during quantization, limiting the expressiveness of the encoder.
+\item \textbf{Domain mismatch and adapter instability:} Mapping from the \textit{Euclid} space (whose broadband VIS filter is sensitive to low intensities) to the multispectral HSC space introduced systematics and instrumental artifacts that the \textit{AION-1} quantizer misinterpreted, assigning incorrect sky background tokens to real galaxies.
+\end{enumerate}
+
+In summary, it was decided to dispense with the use of pretrained discrete tokenizers from \textit{AION-1} because, in systematic evaluations via probing tasks, their performance was inferior in the vast majority of tests compared to direct continuous patch embedding representation. Additionally, the need to train a neural adapter to couple the \textit{Euclid} and HSC spaces introduced instabilities during optimization and represented a computational bottleneck. Although training a native discrete tokenizer optimized specifically for \textit{Euclid} instrumental data is contemplated for future work, the current sample of high-quality galaxies does not provide the critical data volume required to guarantee its proper training and convergence.
+
+\subsubsection{Hybrid Contrastive Alignment (InfoNCE) and Dual-Phase Attention Architecture}
+
+To combine the autoregressive predictive capability of \textit{AstroPT} with the cross-modal alignment power of \textit{AstroCLIP}, we implemented a hybrid architecture of \textbf{hybrid contrastive alignment} using a \textbf{dual-phase attention} mechanism:
+
+To illustrate this coupling and the stages through which the token sequence passes, the conceptual scheme of bimodal processing is presented below:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{AstroPT_Hybrid_Model-Horizontal.png}
+\caption{Conceptual diagram of the bimodal processing in the hybrid AstroPT architecture. It illustrates patch tokenization of Euclid images and DESI spectra, block-based interleaving (token mixing), unimodal isolation (Phase 1) in the initial layers with expert tokens and a diagonal mask, the contrastive alignment layer (InfoNCE), and causal multimodal fusion (Phase 2) in the final layers.}
+\label{fig:arquitectura_bimodal}
+\end{figure}
+
+\paragraph{Phase 1: Unimodal Isolation and Pure Summary Capture (Layers 1 to 6)}
+
+During the first 6 layers of the transformer (out of 12 total layers in the network), the two physical modalities must remain strictly isolated to prevent the causal flow from mixing information prematurely. To achieve this, we apply a diagonal block mask (\texttt{unimodal\_attn\_mask}) over the attention matrix.
+
+To complement the sequence, we introduce \textbf{Expert Tokens} (\texttt{expert\_tokens}), which are independent learnable vectors added just before the global \texttt{[CLS]} token. The unimodal mask imposes the following connectivity rules:
+
+\begin{itemize}
+\item A visual or spectroscopic patch at position $i$ can only attend to previous patches of its own modality (classical unimodal causality).
+\item The \textbf{Image Expert Token} attends to all visual patches of the object, collecting a global representation of its pure visual morphology, as it is situated at the end of the sequence.
+\item The \textbf{Spectrum Expert Token} attends to all tokens of the spectral branch, collecting purely spectroscopic physical information (emission lines, continuum), as it is situated at the end of the sequence.
+\item Patches and experts from different modalities cannot interact or attend to one another, ensuring representations free of cross-contamination.
+\item The global \texttt{[CLS]} token, located at the end of the sequence, attends bidirectionally and without masking to all patches and expert tokens of both modalities. Acting as an integrator, its self-attention mechanism is exempt from unimodal isolation restrictions and the causal mask, facilitating the latent consolidation of bimodal information from the earliest layers.
+\end{itemize}
+
+\paragraph{Fusion Boundary and Contrastive Loss (Layer 6)}
+
+At the end of layer 6, we extract the representations of the two expert tokens ($\mathbf{h}_{\text{exp\_img}}, \mathbf{h}_{\text{exp\_spec}} \in \mathbb{R}^{d_e}$). These are projected to a shared space of dimension $d_c = 256$ using two-layer multilayer perceptron (MLP) projectors with GELU activation and final layer normalization (\texttt{CLIPProjector}), resulting in the L2-normalized vectors $\mathbf{z}_{\text{img}}$ and $\mathbf{z}_{\text{spec}}$:
+
+\begin{equation}
+\mathbf{z} = \text{Normalize}\left(\mathbf{W}_2 \cdot \text{GELU}\left(\mathbf{W}_1 \cdot \mathbf{h}_{\text{exp}} + \mathbf{b}_1\right) + \mathbf{b}_2\right)
+\label{eq:normalize_z}
+\end{equation}
+
+Over a mini-batch of size $B$, the \textbf{symmetric InfoNCE loss (CLIP)} is computed to align the two embedding spaces based on cosine similarity scaled by a learnable inverse temperature $\tau^{-1} = e^{\theta}$ (where $\theta$ is initialized from $\ln\left(1/0.07\right)$):
+
+\begin{equation}
+\mathcal{L}_{\text{CLIP}} = \dfrac{1}{2} \left( \mathcal{L}_{\text{img}\to\text{spec}} + \mathcal{L}_{\text{spec}\to\text{img}} \right)
+\label{eq:clip_loss}
+\end{equation}
+
+\begin{equation}
+\mathcal{L}_{\text{img}\to\text{spec}} = -\dfrac{1}{B} \sum_{i=1}^B \log \dfrac{e^{\langle\mathbf{z}_{\text{img}, i},\,\mathbf{z}_{\text{spec}, i}\rangle \tau^{-1}}}{\sum_{j=1}^B e^{\langle\mathbf{z}_{\text{img}, i},\,\mathbf{z}_{\text{spec}, j}\rangle \tau^{-1}}}
+\label{eq:loss_img_to_spec}
+\end{equation}
+
+This formulation forces the image and spectrum of the same galaxy to have parallel embeddings in the shared latent space, attracting physically similar galaxies and repelling spurious pairings.
+
+\paragraph{Phase 2: Causal Multimodal Fusion (Layers 7 to 12)}
+
+Once the contrastive loss at the boundary is computed, the tokens of the unified sequence enter the final 6 layers of the transformer. In this phase, \textbf{the unimodal mask is removed} and the standard causal autoregressive mask is applied.
+
+From this point onward, image and spectrum representations can interact freely via long-range self-attention. The model learns to model the bimodal joint probability density and the intermodal predictive transition. At the end of the sequence, the global \texttt{[CLS]} token attends to all tokens of the unified sequence in the final normalization layer, providing a joint representation vector ready for downstream astrophysical regression tasks.
+
+\subsection{Optimization Protocols and Training Baselines}
+
+Joint training of galaxy images and spectra is penalized by an inherent imbalance in optimization dynamics. Individual galaxies are represented by 784 image tokens, while spectra occupy 779 tokens. Since the visual image encoder learns low-spatial-frequency patterns very rapidly, its gradients tend to dominate the optimizer, causing extreme \textbf{gradient starvation} in the spectral branch, which encodes very fine emission line transitions and physically rich but numerically subtle absorption peaks.
+
+To counteract this asymmetry and achieve balanced training of the optimized 100-million-parameter model, we implemented the following adaptations in the optimization protocol and hardware infrastructure:
+
+\subsubsection{Gradient Regime and Learning Rate Multipliers}
+
+\begin{itemize}
+\item \textbf{Asymmetric learning rates:} We introduce branch-specific learning rate multipliers in the AdamW optimizer. We slow down the visual image encoder by a factor of \texttt{0.8} and accelerate the spectral encoder by a factor of \texttt{1.35}, ensuring vigorous updates in the spectroscopic branch:
+    \begin{equation}
+    \eta_{\text{images}} = 0.8 \cdot \eta_0, \quad \eta_{\text{spectra}} = 1.35 \cdot \eta_0
+    \label{eq:learning_rates}
+    \end{equation}
+\item \textbf{Asymmetric loss weighting:} We adjust the weights of the mini-batch loss function to prioritize spectral reconstruction over visual reconstruction, setting a weight of \texttt{0.6} for images and \texttt{1.4} for spectra.
+\item \textbf{Relaxation of gradient clipping limit:} We increase the gradient norm clipping limit from \texttt{1.0} to \texttt{2.0}. By relaxing this threshold, we prevent large-magnitude gradients from the visual branch from saturating the optimizer's clipping limit and spuriously reducing spectral components.
+\item \textbf{Amplified cross-reconstruction loss:} During the application of random modality dropout (with probability \texttt{0.10}), when a modality is randomly masked to force unimodal convergence, we activate the \textbf{cross-reconstruction loss}. Specifically, when the \textit{DESI} spectrum is masked, the \textit{Euclid} encoder must reconstruct it in its entirety. To force the model to reduce the modality gap, we multiply this cross-reconstruction loss toward the spectrum by a factor of \texttt{2.5}.
+\item \textbf{Optimizer parameters:} We employ AdamW with a weight decay of \texttt{0.1} to mitigate overfitting and adjust the second moment $\beta_2$ to \texttt{0.98} (compared to the standard \texttt{0.95}), stabilizing the average of sparse spectral gradients.
+\item \textbf{Learnable modality embeddings:} To facilitate the network's ability to unequivocally distinguish the physical origin of tokens in the mixed sequence, we introduce a set of learnable modality embedding vectors. These specific embeddings (one for \textit{Euclid} and another for \textit{DESI}) are added element-wise to the corresponding patch projections prior to the injection of positional embeddings and the start of self-attention in the backbone.
+\end{itemize}
+
+The described set of hyperparameters and optimizations constitutes the result of a systematic exploration of more than 30 pretraining runs and empirical evaluation with various architectures and experimental configurations throughout the project development phase.
+
+\subsubsection{Acceleration and HPC Infrastructure (TeideHPC)}
+
+Training was executed on the \textit{TeideHPC} supercomputing infrastructure \autocite{ar:teidehpc}, using nodes equipped with NVIDIA A100 GPUs interconnected via InfiniBand.
+
+\begin{itemize}
+\item \textbf{Mixed precision:} Training was performed natively under the 16-bit brain floating point format (\texttt{bfloat16}), which preserves the numerical dynamics of brightness fluxes without the need for gradient scaling required in standard \texttt{float16}.
+\item \textbf{\textit{FlashAttention-2} and \textit{FlexAttention}:} To accelerate self-attention computation over the unified bimodal sequence of 2048 tokens, integrated \textit{FlashAttention-2} kernels were used \autocite{ar:dao-2024}. These kernels perform direct segment-wise loading of the key (K), query (Q) and value (V) tensors into the GPU's fast SRAM, avoiding materializing the attention matrix of size $\mathcal{O}(T^2)$ in global HBM. Additionally, the unimodal diagonal block mask of Phase 1 was implemented using the compilable interface of \textit{FlexAttention} in PyTorch 2, optimizing the automated generation of the fused CUDA kernel.
+\end{itemize}
+
+\subsection{Supervised Reference Models (Baselines)}
+
+To rigorously evaluate whether our multimodal foundational model \textit{AstroPT} learns rich latent representations that encode actual physical laws (rather than mere superficial statistical correlations), we designed and trained two supervised reference architectures (\textit{supervised baselines}) on the same catalog of $137\,661$ galaxies. These models were trained to directly estimate key physical properties (such as spectroscopic redshift ($z$) and stellar mass ($\log M_*$)) and serve as a direct benchmark for comparison against the latent representations extracted from \textit{AstroPT}.
+
+\subsubsection{Supervised \textit{ResNet18} for Images (Morphology)}
+
+The visual benchmark consists of a standard deep convolutional network \textit{ResNet18} \autocite{ar:he-2016} trained from scratch. The network receives normal \textit{Euclid} image cutouts of size $224 \times 224$ pixels structured into 4 instrumental channels (VIS, $Y_E$, $J_E$, $H_E$).
+
+The encoder maps the galaxy through its progressive residual blocks to extract a 512-dimensional global feature vector after a Global Average Pooling layer. This vector is directly connected to a linear regression head to predict the desired physical quantity using a mean squared error (MSE) loss. This baseline defines the upper performance limit that a classic supervised convolutional extractor can obtain from isolated spatial morphological information.
+
+\subsubsection{Conv1D and Transformer Encoder for Spectra}
+
+Given that \textit{DESI} spectra consist of long one-dimensional flux sequences ($7781$ spectral channels), designing a direct supervised classifier using a classic transformer over all channels is unfeasible due to the quadratic computational cost of attention.
+
+To resolve this, we designed a hybrid supervised model consisting of a 1D convolutional downsampling block followed by a \textit{Transformer} encoder, inspired by supervised baseline comparison methodologies in the spectroscopic domain proposed in the frameworks of \textit{AstroCLIP} \autocite{ar:astroclip} and \textit{AION-1} \autocite{ar:aion-1}.
+
+\begin{enumerate}
+\item \textbf{1D convolutional downsampling block:} The unified $7781$-channel flux spectrum $\mathbf{f} \in \mathbb{R}^{1 \times 7781}$ is processed through three layers of progressive one-dimensional convolution with batch normalization (\texttt{BatchNorm1D}) and GELU activations:
+    \begin{itemize}
+    \item \textit{Layer 1:} \texttt{Conv1D} with 64 channels, kernel size of 21, and stride of 5.
+    \item \textit{Layer 2:} \texttt{Conv1D} with 128 channels, kernel size of 17, and stride of 4.
+    \item \textit{Layer 3:} \texttt{Conv1D} with 256 channels (matching the transformer's embedding dimension), kernel size of 9, and stride of 2.
+    \end{itemize}
+    This convolutional block collapses the high-resolution spectral sequence of $7781$ values into a compact sequence of exactly $78$ locally enriched spectral tokens, reducing the spectral dimension by a factor of $\sim 100$.
+\item \textbf{\textit{Transformer} encoder:} To the resulting sequence of 78 tokens, learned 256-dimensional positional embeddings are added to preserve the wavelength scale. The sequence enters a standard 4-layer \textit{Transformer} encoder with 8 attention heads, an internal feedforward dimension of 1024, and a dropout of \texttt{0.1} for regularization.
+\item \textbf{Regression head:} The 78-token transformer output is reduced via averaging across the sequential dimension (\textit{mean pooling}) to obtain a global spectrum representation of 256 dimensions. A two-layer linear regression head (\texttt{Linear(256, 128) $\rightarrow$ GELU $\rightarrow$ Dropout(0.1) $\rightarrow$ Linear(128, 1)}) estimates the spectroscopic redshift ($z$) or the physical parameter under evaluation.
+\end{enumerate}
+
+This hybrid supervised Conv1D+Transformer model represents the reference spectral benchmark, allowing us to quantify how much spectral physics (such as Balmer emission line profiles or Doppler broadening) \textit{AstroPT} learns to retain in its bimodal self-supervised representation space compared to a supervised training focused on a single task.
