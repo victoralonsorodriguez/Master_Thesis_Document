@@ -1,2 +1,149 @@
-% !TeX spellcheck = en_GB
-Test Data 
+% !TeX spellcheck = en_US
+
+This section describes the origin of the astronomical data used, the computational infrastructure implemented for their serialization, the systematic image quality audit process, and the filtering strategy to construct the final clean catalog used in the training of our multimodal model.
+
+\subsection{Data Origin and Initial Sample}
+
+The dataset of this thesis is constructed from the intersection of two of the most important cosmological surveys of the decade: the European Space Agency's (ESA) \textit{Euclid} space mission \autocite{ar:mellier-2024} and the ground-based spectroscopic survey \textit{Dark Energy Spectroscopic Instrument} (DESI; \textcite{ar:desi-early-release}).
+
+\subsubsection{Individual Selection Criteria}
+
+The initial selection of objects was performed by identifying the regions of direct spatial overlap between the wide-field and deep-field data releases of the first year of \textit{Euclid} (MER DR1) and the first year of \textit{DESI} (DESI DR1). The following quality filters were applied in parallel to the raw catalogs of both surveys:
+
+\begin{enumerate}
+\item \textbf{Quality filters in DESI DR1:}
+    \begin{itemize}
+    \item \texttt{ZCAT\_PRIMARY == True}: Ensures the selection of the best available spectrum for each unique physical object, eliminating redundant observations.
+    \item \texttt{ZWARN == 0} or \texttt{ZWARN == 4}: Excludes sources with detected issues in the redshift ($z$) fit, except for those with minor, non-critical spectral type alerts.
+    \item \texttt{COADD\_FIBERSTATUS == 0}: Guarantees that the instrumental optical fiber did not exhibit mechanical or readout anomalies during the exposure of the coadded spectrum.
+    \item \texttt{SPECTYPE != 'STAR'}: Restricts the sample to extragalactic sources (galaxies and quasars), excluding Milky Way stars.
+    \item \texttt{Z > 0}: Limits the sample to sources with positive cosmological redshifts ($z$).
+    \end{itemize}
+
+\item \textbf{Quality filters in Euclid MER DR1:}
+    \begin{itemize}
+    \item \texttt{VIS\_DET == 1}: Requires unequivocal detection of the source in the visible channel (VIS) reference image of \textit{Euclid} \autocite{ar:cropper-2024}.
+    \item \texttt{spurious\_prob < 0.2}: Filters out spurious detections produced by noise or local optical artifacts using a strict probability threshold.
+    \item \texttt{flux\_detection\_total > 0.0}: Excludes objects with null or negative measured flux in the detection band.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Symmetric Crossmatch}
+
+Once the quality criteria were applied to the individual catalogs, a symmetric best-match crossmatch was performed between the optical coordinates of \textit{Euclid} and those corresponding to the robotic fiber of \textit{DESI}. A tolerance radius of $0.5$ arcseconds ($0.5''$) was established to prevent spurious matches or matches involving multiple sources in high-density fields.
+
+The matching process yielded the following results:
+
+\begin{itemize}
+\item \textbf{Wide-field sample (WIDE):} $206\,690$ physical matches.
+\item \textbf{Deep-field sample (DEEP):} $46\,880$ physical matches.
+\end{itemize}
+
+Sources associated with \textit{Gaia} mission identifiers were not excluded during the matching process. This decision was made to preserve bright galaxies at low redshift ($z$) that automated stellar classification algorithms frequently misclassify as stars \autocite{ar:ecker-2026}. The final exclusion of Milky Way stars was left to the spectral classifier of \textit{DESI} (\texttt{SPECTYPE}).
+
+\subsubsection{Duplicate Resolution by Quality Hierarchy}
+
+Due to the geographic overlap between the wide-field and deep-field surveys, $820$ unique objects (defined by their \texttt{TARGETID} identifier in \textit{DESI}) were found to be simultaneously present in both samples. To resolve these duplicates and ensure that the final catalog consisted only of independent physical sources, a hierarchical selection scheme based on photometric quality and data origin was implemented:
+
+\begin{enumerate}
+\item \textbf{Evaluation of \texttt{det\_quality\_flag} (Photometry):} The \textit{Euclid} detection quality flag was prioritized in ascending order. Lower values indicate less degradation due to defective pixels or sky background gradients. This criterion resolved $128$ duplicates ($15.6\%$).
+\item \textbf{Evaluation of \texttt{spurious\_flag}:} In the event of a tie in the previous step, the detection with the lowest probability of being spurious was prioritized (this produced no differences in the analyzed sample, as all objects had the same value for this indicator).
+\item \textbf{Evaluation by survey rank (\texttt{survey\_rank}):} If the tie persisted, data from the deep sample (DEEP, rank = 0) was prioritized over the wide-field sample (WIDE, rank = 1) due to the longer integration time and superior signal-to-noise ratio ($\text{S/N}$) of its observations. This step resolved the remaining $692$ duplicates ($84.4\%$).
+\end{enumerate}
+
+Following deduplication, the combined initial sample was consolidated into $252\,750$ unique galaxies, of which $81.5\%$ ($205\,870$) originate from the WIDE sample, $18.2\%$ ($46\,060$) from the DEEP sample, and the remaining $0.3\%$ ($820$) from the overlap resolved through the quality hierarchy.
+
+For each object, image cutouts centered on their astronomical coordinates were generated with a fixed size of $224 \times 224$ pixels. These cutouts cover four instrumental bands of \textit{Euclid}: the visible optical channel (VIS, $I_E$ band) of high spatial resolution, and the three near-infrared NISP channel bands ($Y_E$, $J_E$, and $H_E$ bands).
+
+Since the nominal pixel scale of the visible (VIS) instrument is exactly $0.1$ arcseconds per pixel ($0.1''/\text{pixel}$) \autocite{ar:cropper-2024}, each $224 \times 224$ pixel cutout covers an effective field of view (FOV) of $22.4'' \times 22.4''$. For the near-infrared NISP channel, whose native observations have a pixel scale of $0.3''/\text{pixel}$ \autocite{ar:mellier-2024}, the images were interpolated and bicubically resampled onto the visible channel grid ($0.1''/\text{pixel}$). This ensures that all four bands of each cutout share the same matrix dimensions ($224 \times 224$ pixels) and accurately cover the same spatial extent of the sky ($22.4'' \times 22.4''$).
+
+\subsection{Computational Infrastructure and Data Serialization}
+
+The efficient storage and processing of hundreds of thousands of high-resolution spectrum pairs and multiband image cutouts represent a challenge in high-performance computing (HPC) environments. Traditional astronomical file storage formats (such as individual binary FITS tables) introduce input/output (I/O) throughput bottlenecks due to the latency associated with performing concurrent random reads of millions of small files on disk.
+
+To mitigate this I/O limitation, the dataset was serialized in the \textit{Apache Arrow} columnar format using the \textit{Hugging Face Datasets} library. This paradigm offers the following architectural advantages:
+
+\begin{enumerate}
+\item \textbf{High-Speed Sequential Reading:} Groups images and spectra into large memory-mapped files, allowing continuous reads at speeds close to the physical limit of SSD/NVMe storage.
+\item \textbf{Zero-Copy Serialization:} \textit{Arrow} allows bytes arrays loaded in host RAM to be shared directly with PyTorch dataloaders without requiring memory duplication, thereby reducing RAM consumption.
+\item \textbf{Efficient Random Access:} Enables instantaneous shuffling of samples during GPU training without suffering disk random access penalties.
+\end{enumerate}
+
+\subsubsection{Dataset Partitioning}
+
+The consolidated dataset in Arrow format was randomly split into two independent partitions for model training and validation, using a fixed pseudorandom seed to ensure experimental reproducibility:
+
+\begin{itemize}
+\item Training set (\textit{train split}): $202\,196$ objects ($80\%$).
+\item Validation and testing set (\textit{test split}): $50\,548$ objects ($20\%$).
+\end{itemize}
+
+This partitioning yields a total of $252\,744$ records, which were indexed in the \textit{Hugging Face} columnar format.
+
+\subsection{Flux Integrity Audit and Image Anomalies (Euclid)}
+
+Despite the strict limitations applied during the crossmatching phase, massive astronomical catalogs inevitably contain undocumented instrumental anomalies. To identify and debug potential optical or download corruptions in the \textit{Euclid} VIS and NISP image cutouts, an astronomical flux analysis module was designed and implemented.
+
+This module audited the pixels of the cutouts for the $252\,744$ sources indexed in the \textit{Hugging Face} training and testing partitions. The algorithm classified the cutouts into four physical integrity categories:
+
+\begin{enumerate}
+\item \textbf{Operational (correct):} Images with continuous and realistic flux values in all pixels across all four optical and infrared bands.
+\item \textbf{Total null-flux anomalies (\textit{all-black}):} Cutouts whose pixels have strictly null values (zero or constant empty sky background values) in all four bands simultaneously. This indicates failures in cropping the original mosaic or areas with no coverage at the detector edges.
+\item \textbf{Partial null-flux anomalies (\textit{part-black}):} Cutouts showing null pixel values in at least one instrumental band, but retaining physical signal in the others (for example, a galaxy visible in VIS but with its infrared cutout in the $H_E$ band completely black).
+\item \textbf{Non-numerical value corruptions (\textit{NaN-corrupted}):} Images containing undefined or infinite values (\texttt{NaN}/\texttt{Inf}) that destabilize gradient calculation during backpropagation in neural network training.
+\end{enumerate}
+
+\subsubsection{Audit Results}
+
+The log resulting from the integrity analysis yielded the following statistics on the sample of $252\,744$ objects:
+
+\begin{itemize}
+\item Operational (correct) images: $233\,944$ ($92.56\%$).
+\item Total null-flux anomalies: $12\,486$ ($4.94\%$).
+\item Partial null-flux anomalies: $6\,314$ ($2.50\%$).
+\item Non-numerical value (\texttt{NaN}) corruptions: $0$ ($0.00\%$).
+\end{itemize}
+
+The audit identified a cumulative total of $18\,800$ images with null-flux anomalies. The identifiers of these objects were recorded in an exclusion list for subsequent discarding.
+
+Conditional probability analysis of these anomalies revealed that there was no clear mathematical correlation between the default quality flags of the \textit{Euclid} database (such as \texttt{det\_quality\_flag} or \texttt{spurious\_flag}) and the occurrence of null-flux cutouts. For instance, the probability of an image being completely black despite being photometrically classified as free from photometric anomalies (\texttt{det\_quality\_flag == 0}) was $4.99\%$ ($8\,389$ out of $168\,127$), while the conditional probability for objects free from spurious detections (\texttt{spurious\_flag == 0}) was $4.94\%$. This demonstrates that the catalog indicators do not capture the physical absence of data in localized image cutouts, justifying the necessity of performing a pixel-level audit to purge the training set.
+
+\subsection{Filtering and Final Purging of the Training Catalog}
+
+\subsubsection{Layer 1: Adaptive Spectral Signal-to-Noise Ratio Criterion (DESI)}
+
+The first filtering layer was applied to the \textit{DESI} spectra. The primary objective is to remove spectra with high levels of instrumental noise that could degrade the optimization of the contrastive or autoregressive loss function.
+
+An adaptive logical condition based on the spectroscopic redshift ($z$) of the object was designed. For low redshifts ($z$), the main atomic emission lines of cosmological interest (such as the hydrogen recombination line H$\alpha$ at $6563\,\text{\AA{}}$ and the forbidden transition doublet $\left[\text{N\,II}\right]\,\lambda\lambda 6548, 6584\,\text{\AA{}}$) fall within the wavelength window covered by the red channel ($R$ camera) of the \textit{DESI} spectrographs. Each of the ten cryogenic spectrographs of \textit{DESI} is equipped with three cameras that spectrally divide the total optical range from 360 to 980 nm: the blue camera ($B$, $360\text{--}593\,\text{nm}$), the red camera ($R$, $566\text{--}772\,\text{nm}$), and the near-infrared camera ($Z$, $747\text{--}980\,\text{nm}$) \autocite{ar:abareshi-2022}. As the object has an intermediate or high redshift ($z \ge 0.15$), these emission lines undergo cosmological redshift that shifts them into the near-infrared channel covered by the \textit{DESI} $Z$ camera.
+
+Mathematically, we define the spectrum acceptance condition using the logical expression:
+
+\begin{equation}
+\text{SNR Filter} = \left( \left(z < 0.15\right) \wedge \left(\text{SNR\_SPEC\_R} > 3.0\right) \right) \vee \left( \left(z \ge 0.15\right) \wedge \left(\text{SNR\_SPEC\_Z} > 3.0\right) \right)
+\label{eq:filtro_snr}
+\end{equation}
+
+where \texttt{SNR\_SPEC\_R} and \texttt{SNR\_SPEC\_Z} represent the average signal-to-noise ratio ($\text{S/N}$) measured in the detectors of the \textit{DESI} $R$ and $Z$ cameras, respectively.
+
+The impact of this filter on the catalog of $252\,750$ sources was as follows:
+
+\begin{itemize}
+\item Accepted objects (high $\text{S/N}$): $145\,660$ ($57.6\%$).
+\item Rejected objects (low $\text{S/N}$): $107\,090$ ($42.4\%$).
+\end{itemize}
+
+\subsubsection{Layer 2: Exclusion of Corrupted Images (Euclid Exclusion List)}
+
+Once the sample of $145\,660$ objects with scientific-quality spectroscopy was obtained, the second purging layer was applied by cross-referencing these records with the exclusion list of corrupted \textit{Euclid} images generated in the pixel audit ($18\,800$ objects).
+
+This cross-referencing identified that $7\,999$ objects that had passed the spectral $\text{S/N}$ filter had corrupted image cutouts in \textit{Euclid}, and thus they were permanently discarded.
+
+\subsubsection{Consolidation of the Final Clean Catalog}
+
+After consecutively applying the \textit{DESI} spectral $\text{S/N}$ filter and the discarding based on \textit{Euclid} image quality, the final clean catalog was consolidated into $137\,661$ unique galaxies.
+
+This final catalog represents a net retention of $54.5\%$ with respect to the initial overlapping sample and was consolidated into a unified binary FITS file.
+
+This clean catalog of $137\,661$ objects constitutes the optimal statistical base for training the multimodal foundational model \textit{AstroPT}. By combining artifact-free images with high-$\text{S/N}$ spectra, it is guaranteed that the unified latent space is structured under real physical principles, minimizing the memorización of instrumental noise or data reduction systematics.
+
+It is important to clarify that in diagnostic analyses subsequent to the consolidation of this sample, a minor subset of \textit{Euclid} images was detected that exhibited morphological corruptions due to physical misalignment in the registration of the filters (VIS versus NISP). These sources retain non-null pixel values in all their bands and, consequently, elude the automated detection of the flux analysis algorithm, which only looks for null or black values. However, it was intentionally decided not to purge these objects from the final catalog. The justification for this decision lies in the desire to train the foundational model \textit{AstroPT} under realistic, non-idealized observational conditions, forcing it to latently isolate chromatic misalignments and instrumental domain imperfections as intrinsic anomalies or artifacts, thus dispensing with destructive preprocessing or excessively restrictive manual filtering.
