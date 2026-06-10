@@ -21,6 +21,7 @@
 *.run.xml
 *.pdf
 *.txt
+*.bbl-SAVE-ERROR
 
 # Reference files (legacy)
 Apuntes - Electronica.tex
