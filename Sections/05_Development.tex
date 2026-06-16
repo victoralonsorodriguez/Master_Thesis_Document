@@ -1,4 +1,5 @@
 % !TeX spellcheck = en_US
+\section{Development}
 
 This section details the technical formulation of the \textbf{AstroPT} environment, describing the supercomputing computational infrastructure and pretraining scale, the dataset normalization and scale invariance procedure, the mathematical tokenization scheme for the visual and spectroscopic domains, and the scientific justification of its parameter regime based on empirical scaling laws.
 
@@ -10,19 +11,21 @@ The following table compares model parameters, data scale, and hardware demands 
 
 \begin{table}[H]
 \centering
-\begin{tabular}{|p{4.2cm}|p{2.6cm}|p{2.6cm}|p{2.6cm}|p{2.8cm}|}
-\hline
-\textbf{Parameter / Metric} & \textbf{AstroCLIP \autocite{ar:astroclip}} & \textbf{AION-1 \autocite{ar:aion-1}} & \textbf{AstroPT \autocite{ar:astropt}} & \textbf{Proposed Model (Multimodal AstroPT)} \\ \hline
-\textbf{Model Size} & $\sim$150 million parameters & 300M to 3.100 billion param. & 1M to 2.100 billion param. & $\sim$100.75 million parameters \\ \hline
-\textbf{Dataset} & $\sim$1.5 million pairs & 200 million objects & 8.6 million images & 137\,661 unified pairs \\ \hline
-\textbf{Training Hardware} & 4x NVIDIA H100 & Hundreds of H100/A100 GPUs & NVIDIA A100/H100 GPUs & 4x NVIDIA A100 GPUs (\autocite{ar:teidehpc}) \\ \hline
-\textbf{Estimated Consumption} & $\sim$400 kWh & Hundreds of MWh & $\sim$3,200 kWh & \textbf{Calculate} \\ \hline
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Parameter / Metric} & \textbf{AstroCLIP} & \textbf{AION-1} & \textbf{AstroPT} & \textbf{This work} \\ 
+\midrule
+\textbf{Model Size (parameters)} & $\sim 150\ \si{M}$ & $300\ \si{M}\ \text{to}\ 3.1\ \si{B}$ & $1\ \si{M}\ \text{to}\ 2.1\ \si{B}$ & $\sim 100.75\ \si{M}$ \\ 
+\textbf{Dataset} & $1.5\ \si{M}\ \text{Pairs}$ & $200\ \si{M}\ \text{Objects}$ & $8.6\ \si{M}\ \text{Images}$ & $137\,661\ \text{Pairs}$ \\ 
+\textbf{Training Hardware} & $16 \times \text{H100} $ & $288\times \text{H100}$ &  & $4 \times \text{A100} $ \\
+\textbf{Training Time} & $48\ \si{h}$ & $3.5\ \si{d}$ & & $36\ \si{h}$   \\ 
+\bottomrule
 \end{tabular}
-\caption{Comparison of model parameters, data scale, and hardware demands for training AstroPT against other foundational models in recent astrophysical literature.}
+\caption{Comparison of model parameters, data scale, and hardware demands for training AstroPT in this work against other foundational models in recent astrophysical literature.}
 \label{tab:comparacion_modelos}
 \end{table}
 
-This computational capacity, provided by the \textit{TeideHPC} infrastructure \autocite{ar:teidehpc}, allows establishing a reusable base model. Although the initial computational cost of pretraining is high, the resulting model can be used for various downstream tasks without the need to train its layers from scratch. This optimizes resource consumption in subsequent experiments compared to repeatedly training independent supervised models.
+The computational capacity for this work was provided by the \textit{TeideHPC} infrastructure \autocite{ar:teidehpc}, allows establishing a reusable base model. Although the initial computational cost of pretraining is high, the resulting model can be used for various downstream tasks without the need to train its layers from scratch. This optimizes resource consumption in subsequent experiments compared to repeatedly training independent supervised models.
 
 \subsection{Physical Preprocessing and Scale Invariance}
 
@@ -184,7 +187,7 @@ To illustrate this coupling and the stages through which the token sequence pass
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{AstroPT_Hybrid_Model-Horizontal.png}
+\includegraphics[width=1\textwidth]{AstroPT_Hybrid_Model-Horizontal.png}
 \caption{Conceptual diagram of the bimodal processing in the hybrid AstroPT architecture. It illustrates patch tokenization of Euclid images and DESI spectra, block-based interleaving (token mixing), unimodal isolation (Phase 1) in the initial layers with expert tokens and a diagonal mask, the contrastive alignment layer (InfoNCE), and causal multimodal fusion (Phase 2) in the final layers.}
 \label{fig:arquitectura_bimodal}
 \end{figure}

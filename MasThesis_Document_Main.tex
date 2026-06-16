@@ -3,6 +3,17 @@
 
 \input{MasThesis_Document_Preamble}
 
+\includeonly{
+%Sections/00_Acknowledgments.tex,
+%Sections/01_Abstract.tex,
+%Sections/02_Introduction.tex,
+%Sections/03_Theoretical_Background.tex,
+%Sections/04_Data.tex,
+Sections/05_Development.tex,
+%Sections/06_Results.tex,
+%Sections/07_Conclusions.tex
+}
+
 \begin{document}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -13,7 +24,6 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagestyle{indexpage}
-\section*{Acknowledgments}
 \input{Sections/00_Acknowledgments.tex}
 \clearpage
 \newpage\null\thispagestyle{empty}\newpage
@@ -26,41 +36,35 @@
 
 \linenumbers %%%%%%%%% 
 
-\section*{Abstract}
+
 \addcontentsline{toc}{section}{Abstract/Resumen} 
-\input{Sections/01_Abstract.tex}
+\include{Sections/01_Abstract.tex}
 \clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagestyle{documentpage}
 \newpage
-\section{Introduction}
-\input{Sections/02_Introduction.tex}
+\include{Sections/02_Introduction.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
-\section{Theoretical Background}
-\input{Sections/03_Theoretical_Background.tex}
+\include{Sections/03_Theoretical_Background.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
-\section{Data used}
-\input{Sections/04_Data.tex}
+\include{Sections/04_Data.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
-\section{Development}
-\input{Sections/05_Development.tex}
+\include{Sections/05_Development.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
-\section{Results}
-\input{Sections/06_Results.tex}
+\include{Sections/06_Results.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
-\section{Conclusions}
-\input{Sections/07_Conclusions.tex}
+\include{Sections/07_Conclusions.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
