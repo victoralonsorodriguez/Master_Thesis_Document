@@ -1,0 +1,89 @@
+% !TeX spellcheck = en_GB
+
+%---------------------------------------------------------%
+% LAYOUT STYLE & VISUAL DESIGN CONFIGURATION
+%---------------------------------------------------------%
+
+%------------ PAGE GEOMETRY & MARGINS ------------%
+\geometry{
+	a4paper,
+	lmargin=2cm,      
+	rmargin=2cm,      
+	tmargin=2cm,        
+	bmargin=2cm,        
+	headheight=50pt,                            
+	headsep=0.6cm,      
+	footnotesep=0.6cm,  
+	footskip=1cm,       
+	marginparwidth=0cm  
+}
+
+%------------ PAGE HEADERS & FOOTERS (ONESIDE) ------------%
+% Main document page style
+\fancypagestyle{documentpage}{
+	\fancyhf{} 
+	\fancyhead[R]{\nouppercase{\rightmark}}
+	\fancyhead[L]{\nouppercase{Section \leftmark}}
+	\fancyfoot[L]{\worktype}
+	\fancyfoot[C]{\thepage}
+	\fancyfoot[R]{\authorThesis}
+	\renewcommand{\headrulewidth}{0.2pt} 
+	\renewcommand{\footrulewidth}{0.0pt} 
+}
+
+% Abstract and bibliography page style
+\fancypagestyle{abastractpage}{
+	\fancyhf{}
+	\fancyfoot[L]{\worktype}
+	\fancyfoot[C]{\thepage}
+	\fancyfoot[R]{\authorThesis}
+	\renewcommand{\headrulewidth}{0pt}
+	\renewcommand{\footrulewidth}{0pt}
+}
+
+% Table of contents and acknowledgments page style
+\fancypagestyle{indexpage}{
+	\fancyhf{}
+	\fancyfoot[C]{\thepage}
+	\renewcommand{\headrulewidth}{0pt}
+	\renewcommand{\footrulewidth}{0pt}
+}
+
+%------------ COLOR PALETTE ------------%
+\definecolor{primarycolor}{HTML}{000000}        % Main document color (text)
+\definecolor{headingcolor}{HTML}{000000}        % Sections, titles, and links color
+\definecolor{covercolor}{HTML}{1A237E}          % Primary color for decorated cover pages
+\definecolor{highlightcolor}{HTML}{C62828}      % Alert/note boxes border color
+\definecolor{equationcolor}{HTML}{000000}       % Equation numbers color
+\definecolor{figurecolor}{HTML}{000000}         % Figure references color
+\definecolor{accentcolor}{HTML}{FBC02D}         % Highlight/accent color
+\definecolor{tableheadercolor}{HTML}{68D6F5}    % Table headers background color
+\definecolor{tablerowcolor}{HTML}{F2F2F2}       % Alternating table rows background color
+\definecolor{codekeyword}{HTML}{1A237E}         % Keyword color for code listings
+\definecolor{codecomment}{HTML}{757575}         % Comment color for code listings
+\definecolor{codestring}{HTML}{2E7D32}          % String color for code listings
+\definecolor{codebackground}{HTML}{F5F5F5}      % Background color for code listings
+
+%------------ LINKS & HYPERREF CONFIGURATION ------------%
+\hypersetup{
+	colorlinks=true, 
+	citecolor=primarycolor, 
+	filecolor=primarycolor, 
+	linkcolor=primarycolor, 
+	urlcolor=primarycolor,
+	pdftitle={\titleThesis},
+	pdfauthor={\authorThesis},
+	pdfsubject={\subjectPDF},
+	pdfkeywords={\keywordsPDF}
+}
+
+%------------ TABLE STYLING (BOOKTABS) ------------%
+% Adding subtle spacing around table lines for a clean, professional look
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\abovetopsep}{0pt}
+\setlength{\belowbottomsep}{0pt}
+
+%------------ DRAFT WATERMARK (OPTIONAL) ------------%
+% Uncomment the line below to enable a diagonal "DRAFT" watermark on all pages
+% \usepackage[angle=45, scale=0.95, text=DRAFT, color={[HTML]{FFE0E0}}]{draftwatermark}

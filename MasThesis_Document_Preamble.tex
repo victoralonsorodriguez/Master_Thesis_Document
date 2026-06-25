@@ -1,480 +1,321 @@
 % !TeX spellcheck = en_GB
 
-% PAQUETES BÁSICOS
-\usepackage[british]{babel} % CARGAR EL PAQUETE DE IDIOMA
-\usepackage[T1]{fontenc} % CODIFICACIÓN DE LETRAS ACENTUADAS Y CARACTERES ESPECIALES
-\usepackage[utf8]{inputenc} % CODIFICACIÓN DE LOS ARCHIVOS DE TEXTO
-\usepackage{newcent} % FUENTE EN SANS SHERIF PARA LOS  DE SECCIONES
-\renewcommand\rmdefault{ptm} % TIMES NEW ROMAN PARA EL TEXTO EN SHERIF
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% PAQUETES PARA LAS PROPIEDADES GEMÉTRICAS DEL DOCUMENTO
-
-\usepackage{geometry} % MÁRGENES Y TAMAÑOS DEL TEXTO. SE DEFINEN SUS PROPIEDADES ABAJO
-\geometry{
-	a4paper,
-	textwidth=16cm,     % ANCHURA DEL TEXTO
-	textheight=25.2cm,  % ALTURA DEL TEXTO
-	lmargin=2.5cm,        % MARGEN IZQUIERDO
-	rmargin=2.5cm,        % MARGEN DERECHO
-	tmargin=2cm,        % MARGEN SUPERIOR
-	bmargin=2cm,        % MARGEN INFERIOR
-	headheight=15pt,    % ALTURA ENCABEZADO
-	headsep=0.5cm,      % SEPARACIÓN ENTRE EL ENCABEZADO Y EL TEXTO
-	footnotesep=0.5cm,  % SEPARACIÓN ENTRE EL TEXTO Y LA NOTA A PIE DE PÁGINA
-	footskip=1cm,       % SEPARACIÓN ENTRE LA NOTA A PIE DE PÁGINA Y EL PIE DE PÁGINA
-	marginparwidth=0cm  % SEPARACIÓN ENTRE EL TEXTO Y LOS MÁRGENES
-}
-
-\counterwithout{footnote}{section} % PARA QUE LAS FOOTNOTE NO CAMBIEN EN CADA CAPITULO
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{parskip} % PARA QUE NO HAYA IDENTACION EN LOS PARRAFOS
-
-\newcommand{\msni}{\medskip\noindent} % INICIO DE CADA PÁRRAFO (COMANDO ANTIGUO)
-\newcommand{\indentar}{{\setlength{\parindent}{2em}\indent}} % INDENTAR LOCALMENTE
-
-% EL ESPACIO ENTRE COLUMNAS DEL TEXTO
-\setlength{\columnsep}{12pt}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%---------------------------------------------------------%
+% BLOCK 1: SYSTEM CORE
+%---------------------------------------------------------%
+\usepackage[british]{babel}                     % Language localization
+\usepackage[T1]{fontenc}                        % Font encoding
+\usepackage[utf8]{inputenc}                     % UTF-8 input encoding support
+\usepackage{csquotes}                           % Context-sensitive quotation facilities
+\usepackage{blindtext}                          % Placeholder text generator
 
 
-% PAQUETES A LOS QUE CAMBIO PARÁMETROS FRECUENTEMENTE Y NECESITO TENERLES A MANO
+% Typography: Times font for text and math mode
+\usepackage{newtxtext}
+\usepackage{newtxmath}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{fancyhdr} % DEFINE LOS ENCABEZADOS Y PIES DE PÁGINA DEL DOCUMENTO
-% ENCABEZADOS Y PIES DE PÁGINA
-\usepackage{extramarks}
+% Different font for the frontpage
+\newcommand{\coverfont}{\fontfamily{pag}\selectfont}
 
-% PARA EL ESTILO ARTICLE
-\fancypagestyle{documentpage}{
-% ENCABEZADO
-% Even pages
-\fancyhead[RE]{\nouppercase{\rightmark}}
-\fancyhead[LE]{\nouppercase{Section \leftmark}}
-% Odd pages
-\fancyhead[RO]{\nouppercase{\rightmark}}
-\fancyhead[LO]{\nouppercase{Section \leftmark}}
-\renewcommand{\headrule}{\rule{1\textwidth}{0pt}}
-% PIE DE PÁGINAS
-\fancyfoot[LO, LE]{Astrophysics Master's Thesis}
-\fancyfoot[CO, CE]{\thepage}
-\fancyfoot[RO, RE]{Víctor Alonso Rodríguez}
-\renewcommand{\footrule}{\rule{1\textwidth}{0pt}}
-}
+%---------------------------------------------------------%
+% BLOCK 2: PAGE LAYOUT FRAMEWORK
+%---------------------------------------------------------%
+\usepackage{geometry}                           % Document geometry (configured in style.tex)
+\usepackage[dvipsnames,x11names,table]{xcolor}  % Advanced color palette support
+\usepackage{fancyhdr}                           % Header and footer customization
+\usepackage{extramarks}                         % Additional markers for headers
+\usepackage{parskip}                            % Consistent spacing instead of paragraph indentation
+\usepackage{lineno}                             % Line numbering utility for draft reviews
+\usepackage[shortlabels]{enumitem}              % Custom list numbering (roman, alphabetical, etc.)
 
-% PARA LAS PÁGINAS DE ABSTRACT
-\fancypagestyle{abastractpage}{
-	\renewcommand{\headrule}{\rule{1\textwidth}{0pt}}
-	\fancyhf{}
-	\lfoot{Astrophysics Master's Thesis}
-	\cfoot{\thepage}
-	\rfoot{Víctor Alonso Rodríguez}
-	\renewcommand{\footrule}{\rule{1\textwidth}{0pt}}
-}
+\setlength{\columnsep}{12pt}                    % Column separation width
+\counterwithout{footnote}{section}              % Prevent resetting footnote counter at each section
 
-% PARA LAS PÁGINAS DE ÍNDICE
-\fancypagestyle{indexpage}{
-	\renewcommand{\headrule}{\rule{1\textwidth}{0pt}}
-	\fancyhf{}
-	\lfoot{}
-	\cfoot{\thepage}
-	\rfoot{}
-	\renewcommand{\footrule}{\rule{1\textwidth}{0pt}}
-}
+% Enumeration levels styling
+\setlist[enumerate,1]{label=\textbf{\Roman{enumi}}}
+\setlist[enumerate,2]{label=\theenumi.\arabic*}
+\setlist[enumerate,3]{label=\theenumii.\alph*}
+\renewcommand\labelitemi{-}                     % Itemize bullet style
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{hyperref} % BÁSICO PARA PODER HACER TODAS LA REFERENCIAS ENTRE OBJETOS DEL TEXTO
-% TAMBIÉN PARA INTRODUCIR LINKS A PAGINAS WEB. TIENE OPCIONES PARA CONFIGURAR LOS COLORES DE LOS LINKS
 
-% COLORES PARA LOS VÍNCULOS Y REFERENCIAS
-\hypersetup{colorlinks=true, 
-	citecolor=black, 
-	filecolor=black, 
-	linkcolor=black, 
-	urlcolor=black,
-	pdftitle={Apuntes electrónica}
-}
+%---------------------------------------------------------%
+% BLOCK 3: BIBLIOGRAPHY ENGINE
+%---------------------------------------------------------%
+\usepackage[backend=biber, 
+style=authoryear-icomp,
+uniquename=false, 
+uniquelist=false, 
+maxcitenames=2, 
+maxbibnames=2,
+autopunct=false, 
+giveninits=true
+]{biblatex}
+\DeclareNameAlias{sortname}{family-given}     	% Last name first layout
+\usepackage{microtype}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\usepackage[backend=biber,style=numeric,sorting=none,alldates=short]{biblatex} 
-%\usepackage[style=authoryear-icomp,maxbibnames=1,maxcitenames=1,backend=biber]{biblatex} % PARA 
-% GESTIONAR LA BIBLIOGRAFÍA. SE CITA CON NÚMERO Y EN ORDEN DE CITACIÓN
-\usepackage[backend=biber, style=authoryear-icomp,
-uniquename=false, uniquelist=false, maxcitenames=2, maxbibnames=2,
-autopunct=false,giveninits=true]{biblatex}
-	
-\DeclareNameAlias{sortname}{last-first}
- \usepackage{microtype} % PARA QUE LA BIBLIOGRAFÍA NO ENTRE AL MARGEN
+% Bibliography resources
+\addbibresource{References/articles.bib}
+\addbibresource{References/online.bib}
+\addbibresource{References/books.bib}
 
-% PARA INCLUIR BIBLIOGRAFÍA
-\addbibresource{References/articles.bib} % BIBLIOGRAFÍA CON ARTICULOS
-\addbibresource{References/online.bib} % BIBLIOGRAFÍA CON PÁGINAS WEB
-\addbibresource{References/books.bib} % BIBLIOGRAFÍA CON LIBROS
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%---------------------------------------------------------%
+% BLOCK 4: GRAPHICS & CAPTIONS
+%---------------------------------------------------------%
+\usepackage{graphicx}                           % Embedded images support
+\graphicspath{{./figures/}}                     % Images search path
+\usepackage{float}                              % Force figures positioning [H]
+\usepackage{svg}                                % SVG graphic format support
+\usepackage{wrapfig}                            % Text wrapping around figures
+\usepackage{adjustbox}                          % Frame box adjustments
+\usepackage{caption}                            % Captions formatting options
+\captionsetup{labelfont=bf}                     % Bold font for Figure/Table titles
+\usepackage{subcaption}                         % Subfigures and subcaptions
 
-% PAQUETES PARA LAS FIGURAS
 
-\usepackage{graphicx} % PAQUETE PARA INCLUIR FIGURAS
-\usepackage{float} % PAQUETE PARA MOVER LAS FIGURAS Y TABLAS COMO FLOTANTES
-\usepackage{svg}
-\usepackage{epsfig} % PAQUETE PARA TRATAR LAS FIGURAS EPS DE MATHEMATICA
-\usepackage{epstopdf} % CONVIERTE LAS EPS EN PDF PAA METERLAS A LATEX
-\epstopdfsetup{outdir=./Figures/} % CARPETA DONDE SE EXPORTAN LAS FIGURAS EPS
-\graphicspath{{./Figures/}} % CARPETA DE DONDE SE COGEN LAS FIGURAS
-\usepackage{wrapfig} % PAQUETE PARA PONER TENXTO ALREDEDOR DE LA IMAGEN
-\usepackage{adjustbox} % CREA CAJAS DE TEXTO
+%---------------------------------------------------------%
+% BLOCK 5: ADVANCED TABLES SYSTEM
+%---------------------------------------------------------%
+\usepackage{array}                              % Column and row cell alignment
+\usepackage{tabularx}                           % Tables with adjustable columns
+\usepackage{booktabs}                           % Cambridge-style tables
+\usepackage{longtable}                          % Multi-page tables support
+\usepackage{multicol}                           % Multiple text columns layout
+\usepackage{multirow}                           % Merged rows support
+\usepackage{dcolumn}                            % Align values on decimal points
+\usepackage{rotating}                           % Rotated text and cells in tables
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{caption} % PARA MANEJAR LOS CAPTION
-\captionsetup{labelfont=bf} % ETIQUETAS DE FIGURAS Y TABLAS EN NEGRITA
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{subcaption} % PARA TENER FIGURAS Y SUBFIGURAS Y TABLAS Y SUBTABLAS ETC
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% PAQUETES PARA LAS TABLAS
-
-\usepackage{array} % PAQUETE PARA EL ENTORNO DE LAS TABLAS
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{tabularx} % ENTORNO PARA CONTROLAR LA ANCHURA DE LAS TABLAS Y DE LAS COLUMNAS
-\usepackage{booktabs} % CONTROLA LAS LINEAS DE LAS TABLAS Y SEPARACION VERTICAL ENTRE CELDAS
-
-% SEPARACIÓN ENTRE LINEAS Y CELDAS
-\newdimen\belowrulesep
-\newdimen\belowbottomsep
-\newdimen\aboverulesep
-\newdimen\abovetopsep
-\belowrulesep = 0pt % SEPARACIÓN INFERIOR MID Y TOP RULE
-\belowbottomsep = 0pt % SEPARACIÓN INFERIOR BOTTOMRULE
-\aboverulesep = 0pt % SEPARACIÓN SUPERIOR MID Y BOTTOM RULE
-\abovetopsep = 0pt % SEPARACIÓN SUPERIOR TOPRULE
-
-% ANCHURA DE LAS LINEAS
-\newdimen\heavyrulewidth
-\newdimen\lightrulewidth
-\heavyrulewidth = 0.08em % GROSOR TOP Y BOTTOM RULE
-\lightrulewidth = 0.04em % GROSOR MIDRULE
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{longtable} % TABLAS QUE OCUPAN MÁS DE UNA HOJA
-\usepackage{multicol} % PARA PODER UNIR DOS COLUMNAS Y PARA TENER TEXTO A VARIAS COLUMNAS
-\usepackage{multirow} % PARA PODER UNIR DOS FILAS
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{dcolumn} % PARA ALINEAR POR DECIMALES EN LAS COLUMNAS CON NUMEROS. 
-% HAY QUE DEFINIR UNA COLUMNA NUEVA PARA PODER USARLO
-
-% NUEVAS COLUMNAS PARA AÑADIR ALINEACIÓN POR DECIMALES Y EN NEGRITA
-\renewcommand\tabularxcolumn[1]{m{#1}} % PARA CENTRAR EN VERTICAL
-\newcolumntype{C}{>{\centering\arraybackslash}X} % COLUMNA CENTRADA
-%\newcolumntype{C}{>{\raggedleft\arraybackslash}X}
-%\newcolumntype{L}{>{\raggedright\arraybackslash}X} % COLUMNA CENTRADA
-%\newcolumntype{R}{>{\raggedleft\arraybackslash}X} % COLUMNA CENTRADA
-%\newcolumntype{C}{>{$}<{$}}
-\newcolumntype{d}[1]{D{.}{,}{#1}} % ALINEACIÓN POR DECIMALES
+% Custom decimal column types
+\newcolumntype{C}{>{\centering\arraybackslash}X} 
+\newcolumntype{d}[1]{D{.}{,}{#1}}
 \makeatletter
-\newcolumntype{b}[3]{>{\boldmath\DC@{#1}{#2}{#3}}c<{\DC@end}} % ALINEACIÓN PODE DECIMALES EN NEGRITA
+\newcolumntype{b}[3]{>{\boldmath\DC@{#1}{#2}{#3}}c<{\DC@end}}
 \makeatother
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{rotating} % PARA ROTAR CELDAS
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[dvipsnames,x11names,table]{xcolor} % PAQUETE PARA CONTROLAR LOS COLORES DEL DOCUMENTO
-% LAS OPCIóN APORTAN DIFERENTES OPCIONES DE COLORES POR NOMBRES (x11names = 300 colores)
-% MIENRAS QUE TABLE ES PARA CONTROLAR EL COLOR EN LAS TABLAS COMO SI FUERA EL COLORTBL PACKGAGE
+\renewcommand\tabularxcolumn[1]{m{#1}}         % Centered vertical alignment inside tabularx cells
 
 
-% COLORES PARA EL TEXTO EN GENERAL
+%---------------------------------------------------------%
+% BLOCK 6: MATHEMATICS, SCIENCE & SI UNITS
+%---------------------------------------------------------%
+\usepackage{mathtools}                          % Mathematical typesetting utilities
+\usepackage{amsmath}                            % AMS mathematical environments
+\usepackage{amssymb}                            % Extra mathematical symbols
+\usepackage{bm}                                 % Bold mathematical font support
+\usepackage{physics}                            % Physics mathematical operators
+\usepackage[makeroom]{cancel}                   % Strikethrough math terms
+\usepackage{siunitx}                            % Comprehensive SI units system
 
-%\iffalse
-%\definecolor{colorseccion}{HTML}{FF0000} % ROJO PARA LAS SECCIONES
-\definecolor{colorseccion}{HTML}{000000} % ROJO PARA LAS SECCIONES
-\definecolor{colordefinicion}{HTML}{FF0000} % ROJO PARA LAS DEFINICIONES Y PALABRAS DESTACADAS
-%\definecolor{colorecuacion}{HTML}{000DEB} % AZUL PARA LAS ECUACIONES
-\definecolor{colorecuacion}{HTML}{000000}
-\definecolor{colorfigura}{HTML}{000000} % NEGRO PARA LAS FIGURAS
-\definecolor{colornota}{HTML}{0EFF00} % VERDE PARA LAS NOTAS
-\definecolor{colorejemplo}{HTML}{FF8800} % NARANJA PARA LOS EJEMPLOS
-\definecolor{colordestacar}{HTML}{FAFF00} % AMARILLO PARA RESALTAR ECUACIONES MAS IMPORTANTES
-\definecolor{azul encabezados tbl}{HTML}{68D6F5} % AZUL CLARO ENCABEZADOS TABLAS
-\definecolor{gris filas tbl}{HTML}{F2F2F2} % GRIS CLARO FILAS TABLAS
-\definecolor{colorrecuadro}{HTML}{FFFB00} % AMARILLO PARA LOS RECUADROS AMARILLOS
-%\fi
-
-% MONOCROMÁTICO
-\iffalse
-\definecolor{colorseccion}{HTML}{000000} % ROJO PARA LAS SECCIONES
-\definecolor{colordefinicion}{HTML}{000000} % ROJO PARA LAS DEFINICIONES Y PALABRAS DESTACADAS
-\definecolor{colorecuacion}{HTML}{000000} % AZUL PARA LAS ECUACIONES
-\definecolor{colorfigura}{HTML}{000000} % NEGRO PARA LAS FIGURAS
-\definecolor{colornota}{HTML}{000000} % VERDE PARA LAS NOTAS
-\definecolor{colorejemplo}{HTML}{000000} % NARANJA PARA LOS EJEMPLOS
-\definecolor{colordestacar}{HTML}{000000} % AMARILLO PARA RESALTAR ECUACIONES MAS IMPORTANTES
-\definecolor{azul encabezados tbl}{HTML}{FFFFFF} % AZUL CLARO ENCABEZADOS TABLAS
-\definecolor{gris filas tbl}{HTML}{F2F2F2} % GRIS CLARO FILAS TABLAS
-\definecolor{colorrecuadro}{HTML}{000000} % AMARILLO PARA LOS RECUADROS AMARILLOS
-\fi
-
-% OPCIONES CREADAS PARA AGILIZAR EL TEXTO EN COLORES
-\newcommand\texrojo[1]{\textcolor{colorseccion}{\textbf{#1}}} % PONE EL TEXTO EN ROJO Y NEGRITA
-\newcommand\matrojo[1]{\textcolor{colorseccion}{\bm{$ #1 $}}} % PONE EL TEXTO EN ROJO Y NEGRITA
-\newcommand\ecazul[1]{\bm{\textcolor{colorecuacion}{#1}}} % PONE EL TEXTO EN AZUL Y NEGRITA
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% PAQUETES PARA LAS MATEMÁTICAS
-
-\usepackage{mathtools} % PAQUETE BÁSICO PARA LAS ECUACIONES Y SUS OPCIONES 
-%\numberwithin{equation}{section} % AÑADIR SECCION EN LA NUMERACION DE ECUACIONES
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{amsmath}
-\usepackage{amssymb} % PARA DEFINIR LOS SÍMBOLOS MATEMÁTICOS
-\usepackage{bm} % PARA PONER EL ENTORNO MATEMÁTICO EN NEGRITA
-\usepackage{physics} % PARA FACILITAR EL USO DE FÓRMULAS MATEMÁTICAS EN LA FÍSICA
-\usepackage[makeroom]{cancel} % PARA TACHAR TÉRMINO
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{siunitx} % PAQUETE PARA TRABJAR CON LAS UNIDADES DEL SISTEMA INTERNACIONAL
-% ADEMÁS PODEMOS TRABAJAR CON LA NOTACIÓN CIENTÍFICA DE MANERA MAS SENCILLA
-
-% PARA TRABAJAR CON LA NOTACIÓN CIENTÍFICA Y LAS UNIDADES EN NEGRITA
-\newcommand\notci[2]{$#1\cdot10^{#2}$} % PONE EL TEXTO EN ROJO Y NEGRITA
-\newcommand{\nc}{\num}
-\sisetup{output-decimal-marker = {,}}
-\sisetup{exponent-product = \cdot}
-\sisetup{mode = text}
+% SIunits configuration for English localization
 \sisetup{
-	reset-text-family = false ,
-	reset-text-series = false ,
-	reset-text-shape = false
+	output-decimal-marker = {.}, 
+	exponent-product = \cdot,     
+	mode = match,                 
+	retain-explicit-plus = true,  				% Keep positive sign for angles
+	parse-numbers = false         				% Keep leading zeros in angles
 }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% NUEVOS COMANDOS MATEMATICOS
-\providecommand{\abs}[1]{\lvert#1\rvert} % PARA USAR EL VALOR ABSOLUTO
-\providecommand{\norm}[1]{\lVert#1\rVert} % PARA USAR LA NORMA
-\newcommand{\angstrom}{\textup{\AA}} % UNIDAD DE ANGSTROM
-\newcommand\rot[1]{ rot\ #1  } % ROTACIONAL
-\newcommand\gradiente[1]{ \vec{\nabla} #1  } % GRADIENTE
-\newcommand\divergencia[1]{ \vec{\nabla} \cdot #1  } % DIVERGENCIA
-\newcommand\vectores[1]{\begin{pmatrix} #1 \end{pmatrix}} % VECTORES
-\newcommand\derivada[2]{\dfrac{d #1}{d #2}} % DERIVADA
-\newcommand\derivadacuad[2]{\dfrac{d^2 #1}{d {#2}^2}} % DERIVADA CUADRADO
-\newcommand\derivadaparcial[2]{\dfrac{\partial #1}{\partial #2}} % DERIVADA PARCIAL
-\newcommand\derivadaparcialcuad[2]{\dfrac{\partial^2 #1}{\partial {#2}^2}} % DERIVADA PARCIAL CUADRADO
 
-% NUEVAS ESTRUCTURAS DE ECUACIONES DESTACADAS
+%---------------------------------------------------------%
+% BLOCK 7: CROSS-REFERENCES & NAVIGATION
+%---------------------------------------------------------%                       
+\usepackage[
+	plainpages=false, 
+	pdfpagelabels=true]{hyperref}				% Clickable hyperlinks and PDF meta
+\usepackage[english,sort&compress,nameinlink,noabbrev]{cleveref} % Smart context-aware referencing
+\usepackage{calc}                               % In-preamble math dimension calculations
+\usepackage[nottoc,notlot,notlof]{tocbibind}    % Add bibliography and tables in TOC
+\usepackage{tocloft}                            % Custom TOC formatting options
+\usepackage{etoolbox}                           % System hooks and patching tools
 
-% EQUACIÓN CON NOMBRE CORTO
-\newcommand\ecdef[2]{
-	\Large{\textbf{\textcolor{colorseccion}{#1}}} 	\normalsize\bm{\textcolor{colorecuacion}{\hspace{1cm}
-				#2
-		}}
-}
+\setcounter{tocdepth}{2}                        % TOC depth level: Sections and Subsections
+\setcounter{secnumdepth}{3}                     % Document section numbering depth level
 
-% EQUACIÓN CON NOMBRE CORTO CENTRADO
-\newcommand\ecdefcent[2]{
-	\begin{center}
-	\Large{\textbf{\textcolor{colorseccion}{#1}}} 	\normalsize\bm{\textcolor{colorecuacion}{\hspace{1cm}
-				#2
-		}}
-	\end{center}
-}
-
-% EQUACIÓN CON NOMBRE LARGO
-\newcommand\ecdefdoble[3]{
-	\begin{aligned}
-		\Large{\textbf{\textcolor{colorseccion}{#1}}}&\\ 
-		\Large{\textbf{\textcolor{colorseccion}{#2}}}
-	\end{aligned}
-	\normalsize\bm{\textcolor{colorecuacion}{\hspace{1cm}
-			#3
-	}}
-}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% OTROS PAQUETES ÚTILES
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[spanish,sort&compress,nameinlink,noabbrev]{cleveref} % PARA PERSONALIZAR LOS LINKS DEPENDIENDO DEL TIPO DE OBJETO, ECUACION, SECCION...
-
-% PERSONALIZACIÓN DE LAS REFERENCIAS CON CLEVEREF
-% TIPOS DE FORMA INDIVIDUAL
-
-% ESTILO ARTICLE
-%\iffalse
-\crefformat{equation}{ecuación [#2{\bfseries\color{colorecuacion}#1}#3]}
-\crefformat{figure}{Figura #2{\bfseries\color{colorfigura}#1}#3}
-\crefformat{table}{Tabla #2{\bfseries\color{colorfigura}#1}#3}
-\crefformat{chapter}{Capítulo #2{\bfseries\color{black}#1}#3}
-\crefformat{section}{sección #2{\bfseries\color{black}#1}#3}
-\crefformat{subsection}{subsección #2{\bfseries\color{colorseccion}#1}#3}
-\crefformat{definicion}{Definición #2{\bfseries\color{colorseccion}{\thesection.#1}}#3}
-\crefformat{notas}{Nota #2{\bfseries\color{colornota}{\thesection.#1}}#3}
-\crefformat{ej}{Ejemplo #2{\bfseries\color{colorejemplo}{\thesection.#1}}#3}
-\crefformat{problema}{Problema #2{\bfseries\color{colorseccion}{\thesection.#1}}#3}
-\crefformat{demo}{Demostración #2{\bfseries\color{colorecuacion}{\thesection.#1}}#3}
-\crefformat{desa}{Desarrollo #2{\bfseries\color{colorecuacion}{\thesection.#1}}#3}
-\crefformat{footnote}{Nota #2{\bfseries\color{colorseccion}{#1}}#3}
-
-% PARA LAS LISTAS COMPRIMIDAS DE LOS DIFERENTES TIPOS
-\crefrangeformat{equation}{ecuaciones [#3{\bfseries\color{colorecuacion}#1}#4] a [#5{\bfseries\color{colorecuacion}#2}#6]}
-\crefrangeformat{figure}{Figuras #3{\bfseries\color{colorfigura}#1}#4 a #5{\bfseries\color{black}#2}#6}
-\crefrangeformat{table}{Tabla #3{\bfseries\color{colorfigura}#1}#4 a #5{\bfseries\color{black}#2}#6}
-\crefrangeformat{chapter}{Capitulos #3{\bfseries\color{black}#1}#4 a #5{\bfseries\color{black}#2}#6}
-\crefrangeformat{section}{secciones #3{\bfseries\color{black}#1}#4 a #5{\bfseries\color{black}#2}#6}
-\crefrangeformat{subsection}{subsecciones #3{\bfseries\color{colorseccion}#1}#4 a #5{\bfseries\color{black}#2}#6}
-\crefrangeformat{notas}{Notas #3{\bfseries\color{colornota}{\thesection.#1}}#4 a #5{\bfseries\color{colornota}{\thesection.#2}}#6}
-\crefrangeformat{ej}{los Ejemplos #3{\bfseries\color{colorejemplo}{\thesection.#1}}#4 a #5{\bfseries\color{colorejemplo}{\thesection.#2}}#6}
-\crefrangeformat{problema}{Problemas #3{\bfseries\color{colorseccion}{\thesection.#1}}#4 a #5{\bfseries\color{colorseccion}{\thesection.#2}}#6}
-\crefrangeformat{demo}{Demostraciones #3{\bfseries\color{colorecuacion}{\thesection.#1}}#4 a #5{\bfseries\color{colorecuacion}{\thesection.#2}}#6}
-\crefrangeformat{desa}{Desarrollos #3{\bfseries\color{colorecuacion}{\thedesa.#1}}#4 a #5{\bfseries\color{colorecuacion}{\thesection.#2}}#6}
-%\fi
-
-
-% PARA LAS LISTAS SIN COMPRIMIR DE LOS DIFERENTES TIPOS
-\crefmultiformat{equation}{ecuaciones [#2{\bfseries\color{colorecuacion}#1}#3]}{ y [#2{\bfseries\color{colorecuacion}#1}#3]}{, [#2{\bfseries\color{colorecuacion}#1}#3]}{ y [#2{\bfseries\color{colorecuacion}#1}#3]}
-\crefmultiformat{figure}{Figuras #2{\bfseries\color{colorfigura}#1}#3}{ y  #2{\bfseries\color{colorfigura}#1}#3}{, #2{\bfseries\color{colorfigura}#1}#3}{ y #2{\bfseries\color{colorfigura}#1}#3}
-\crefmultiformat{section}{secciones #2{\bfseries\color{black}#1}#3}{ y  #2{\bfseries\color{black}#1}#3}{, #2{\bfseries\color{black}#1}#3}{ #2{\bfseries\color{black}#1}#3}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[explicit]{titlesec} % PERSONALIZAR TITULOS SECCIONES
-
-% PERSONALIZACIONES DE TITULOS DE SECCIONES
-\iffalse
-\titleformat{\chapter}[hang]
-{\filcenter}
-{\color{white}
-	\parbox{\widthof{\LARGE\sffamily\MakeUppercase{\chaptername}}}{%
-		\filcenter\Large\usefont{T1}{pag}{m}{n}\MakeUppercase{\textbf{\chaptername}}\\%
-		\fontsize{48pt}{48pt}\selectfont\thechapter%
-	}\enspace%
-}
-{0pt}
-{\color{white}
-	\Huge\usefont{T1}{pag}{b}{n}\vrule width 1pt \enspace%
-	\color{black}
-	\parbox{\textwidth-\widthof{\LARGE\sffamily\MakeUppercase{\chaptername}\enspace}}{\filright #1}%
-	\vspace{2cm}
-}
-
-\titleformat{\section}
-{\normalfont\sffamily\Large\bfseries\color{black}}
-{\thesection}
-{.5em}
-{\MakeUppercase #1}
-[\vspace{.5ex}\titlerule]
-
-
-\titleformat{\subsection}
-{\normalfont\sffamily\large\bfseries\color{colorseccion}}
-{\thesubsection}
-{.5em}
-{\MakeUppercase{#1}}
-
-\titleformat{\subsubsection}
-{\normalfont\sffamily\large\bfseries\color{colorseccion}}
-{\thesubsubsection}
-{.5em}
-{#1}
-\fi
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{calc}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[nottoc,notlot,notlof]{tocbibind}
-\usepackage{tocloft} % PARA MODIFICAR PARTES DE LA TABLA DE CONTENIDOS
-
-
-\setcounter{tocdepth}{2} % EN LA TOC SE NUMERAN SOLO CAPÍTULOS Y SECCIONES
-\setcounter{secnumdepth}{3} % EN EL RESTO DEL DOCUMENTO SE NUMERAN HASTA LAS SUBSECCIONES
-
-% CAMBIAR LA FUENTE DE LA TABLA DE CONTENIDOS
-\renewcommand{\cfttoctitlefont}{\Huge\bfseries} % NOMBRE TABLA
-%\renewcommand{\cftpartfont}{\Large\bfseries\sffamily} % PARTE
-%\renewcommand{\cftchapfont}{\large\bfseries\sffamily} % CAPÍTULO
-%\renewcommand{\cftsecfont}{\sffamily} % SECCION
-%\renewcommand{\cftsubsecfont}{\sffamily} % SUBSECCION
-
-% CAMBIAR LA FUENTE DE LOS NÚMEROS
-%\renewcommand{\cftpartpagefont}{\Large\bfseries\sffamily} % PARTE
-%\renewcommand{\cftchappagefont}{\large\bfseries\sffamily}
-%\renewcommand{\cftsecpagefont}{\sffamily}
-%\renewcommand{\cftsubsecpagefont}{\sffamily}
-
-% CAMBIAR LA SEPARACIÓN ENTRE LAS ENTRADA
-\usepackage{etoolbox}
-
+% Spacing adjustments in Table of Contents
 \makeatletter
-\pretocmd{\chapter}{\addtocontents{toc}{\protect\addvspace{5\p@}}}{}{}
 \pretocmd{\section}{\addtocontents{toc}{\protect\addvspace{15\p@}}}{}{}
 \pretocmd{\subsection}{\addtocontents{toc}{\protect\addvspace{1\p@}}}{}{}
 \makeatother
 
-% PARÁMETROS DE LA TABLA DE CONTENIDOS
-\setlength\cftsecnumwidth{10pt} % SEPARACIÓN ENTRE EL NÚMERO Y LA SECCION 
-\setlength\cftsubsecnumwidth{18pt} % SEPARACIÓN ENTRE EL NÚMERO Y LA SECCION 
-\renewcommand\cftdotsep{2} % SEPARACIÓN ENTRE PUNTOS
-\cftsetpnumwidth{0.3cm} % SEPARACIÓN ENTRE LOS PUNTOS Y LA HOJA
+% Custom Table of Contents title font size
+\renewcommand{\cfttoctitlefont}{\Huge\bfseries}
+
+% TOC layout spacing parameters
+\setlength\cftsecnumwidth{10pt} 
+\setlength\cftsubsecnumwidth{18pt} 
+\renewcommand\cftdotsep{2} 
+\cftsetpnumwidth{0.3cm} 
+
+% Premium cross-reference label coloring (linking to style.tex custom colors)
+\crefformat{equation}{equation~[#2{\bfseries\color{equationcolor}#1}#3]}
+\crefformat{figure}{Figure~#2{\bfseries\color{figurecolor}#1}#3}
+\crefformat{table}{Table~#2{\bfseries\color{figurecolor}#1}#3}
+\crefformat{section}{section~#2{\bfseries\color{primarycolor}#1}#3}
+\crefformat{subsection}{subsection~#2{\bfseries\color{primarycolor}#1}#3}
+\crefformat{theorem}{Theorem~#2{\bfseries\color{primarycolor}{\thesection.#1}}#3}
+\crefformat{footnote}{Note~#2{\bfseries\color{highlightcolor}#1}#3}
+
+% Compressed list references range (e.g., "Figures 1 to 3")
+\crefrangeformat{equation}{equations~[#3{\bfseries\color{equationcolor}#1}#4] to [#5{\bfseries\color{equationcolor}#2}#6]}
+\crefrangeformat{figure}{Figures~#3{\bfseries\color{figurecolor}#1}#4 to #5{\bfseries\color{figurecolor}#2}#6}
+\crefrangeformat{table}{Tables~#3{\bfseries\color{figurecolor}#1}#4 to #5{\bfseries\color{figurecolor}#2}#6}
+\crefrangeformat{section}{sections~#3{\bfseries\color{primarycolor}#1}#4 to #5{\bfseries\color{primarycolor}#2}#6}
+\crefrangeformat{subsection}{subsections~#3{\bfseries\color{primarycolor}#1}#4 to #5{\bfseries\color{primarycolor}#2}#6}
+
+% Multi-item references list formatting (e.g., "Figures 1 and 2")
+\crefmultiformat{equation}{equations~[#2{\bfseries\color{equationcolor}#1}#3]}{ and [#2{\bfseries\color{equationcolor}#1}#3]}{, [#2{\bfseries\color{equationcolor}#1}#3]}{ and [#2{\bfseries\color{equationcolor}#1}#3]}
+\crefmultiformat{figure}{Figures~#2{\bfseries\color{figurecolor}#1}#3}{ and  #2{\bfseries\color{figurecolor}#1}#3}{, #2{\bfseries\color{figurecolor}#1}#3}{ and #2{\bfseries\color{figurecolor}#1}#3}
+\crefmultiformat{section}{sections~#2{\bfseries\color{primarycolor}#1}#3}{ and  #2{\bfseries\color{primarycolor}#1}#3}{, #2{\bfseries\color{primarycolor}#1}#3}{ #2{\bfseries\color{primarycolor}#1}#3}
+
+% Appendix package setup
+\usepackage{appendix}
+\renewcommand{\appendixname}{Appendices}
+\renewcommand{\appendixtocname}{Appendices}
+\renewcommand{\appendixpagename}{Appendices}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{minitoc} % PARA HACER MINI ÍNDICES EN CADA CAPÍTULO
-\renewcommand{\mtctitle}{Contenidos} % TITULO DE LA MINITOC
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% HACER GLOSARIO
-%\usepackage{showframe}
-\usepackage[nopostdot, nogroupskip]{glossaries}
+%---------------------------------------------------------%
+% BLOCK 8: GLOSSARY & ACRONYMS
+%---------------------------------------------------------%
+\usepackage[nopostdot, nogroupskip]{glossaries}  % Automatic acronyms compilation
 \setlength{\glsdescwidth}{\linewidth} 
 \setlength{\glspagelistwidth}{\linewidth} 
 \renewcommand*\glspostdescription{\dotfill}
 \renewcommand{\glsnamefont}[1]{\textbf{#1}}
-
 \makenoidxglossaries
-\newacronym{CALIFA}{CALIFA}{Calar Alto Legacy Integral Field Area Survey}
-\newacronym{CCD}{CCD}{Charge-Coupled Device}
-\newacronym{CMOD}{CMOD}{Chromatic Surface Brightness Modulation}
-\newacronym{DS9}{DS9}{SaoImage DS9}
-\newacronym{ESO}{ESO}{European Southern Observatory}
-\newacronym{4LGSF}{4LGSF}{Four Laser Guide Star Facility}
-\newacronym{FWHM}{FWHM}{Full Width Half Maximun}
-\newacronym{HST}{HST}{Hubble Space Telescope}
-\newacronym{IC}{IC}{Index Catalog}
-\newacronym{IFS}{IFS}{Integral Field Spectroscopy}
-\newacronym{IFU}{IFU}{Integral Field Unit}
-\newacronym{JWST}{JWST}{James Webb Space Telescope}
-\newacronym{M}{M}{Messier Catalog}
-\newacronym{MUSE}{MUSE}{Multi Unit Spectroscopic Explorer}
-\newacronym{NED}{NED}{NASA/IPAC Extragalactic Database}
-\newacronym{NGC}{NGC}{New General Catalog}
-\newacronym{PSF}{PSF}{Point Spread Function}
-\newacronym{SDSS}{SDSS}{Sloan Digital Sky Survey}
-\newacronym{SED}{SED}{Spectral Energy Distribution}
-\newacronym{cSED}{cSED}{Composite Spectral Energy Distribution}
-\newacronym{SSP}{SSP}{Single Stellar Population}
-\newacronym{VLT}{VLT}{Very Large Telescope}
 
-\NewDocumentEnvironment{textquote}{m +b}{%
+% Load external acronyms file
+\input{configuration/glossary}
+
+
+%---------------------------------------------------------%
+% BLOCK 9: BOXES & THEOREM-LIKE ENVIRONMENTS
+%---------------------------------------------------------%
+\usepackage[most]{tcolorbox}                    % Custom colored boxes
+\usepackage{empheq}                             % Colored boxes in equations
+\tcbuselibrary{theorems,listings}               % Theorem and listing support in tcolorbox
+
+% 1. Highlight Box / Note Environment
+\newtcolorbox{highlightbox}[1][]{
+	enhanced,
+	before skip=3mm,
+	after skip=3mm,
+	boxrule=0pt,
+	leftrule=3.5pt,
+	colframe=highlightcolor,         
+	colback=tablerowcolor!50!white,   
+	sharp corners,
+	fonttitle=\bfseries,
+	coltitle=black,
+	attach title to upper,
+	after title={\par\smallskip},
+	#1
+}
+
+% 2. Theorem / Definition Environment (numbered by section)
+\newcounter{theorem}[section]
+\newtcolorbox{theorem}[2][]{
+	enhanced,
+	before skip=4mm,
+	after skip=4mm,
+	colback=white,
+	colframe=headingcolor!60!black,  
+	boxrule=0.6pt,
+	arc=3pt,
+	title={\textbf{Theorem \thesection.\refstepcounter{theorem}\thetheorem: #2}},
+	colbacktitle=white,
+	coltitle=headingcolor!60!black,
+	fonttitle=\bfseries,
+	attach boxed title to top left={yshift=-2mm, xshift=2mm},
+	boxed title style={
+		colframe=white,
+		colback=white,
+		outer arc=0pt,
+		arc=0pt,
+		boxrule=0pt,
+		left=0pt,right=0pt,top=0pt,bottom=0pt
+	},
+	#1
+}
+
+% 3. Code Listing Environment
+\newtcblisting{codebox}[2][]{
+	enhanced,
+	boxrule=0pt,
+	leftrule=3.5pt,
+	colframe=headingcolor,
+	colback=codebackground,
+	sharp corners,
+	top=2mm,
+	bottom=2mm,
+	left=5mm,
+	right=2mm,
+	before skip=4mm,
+	after skip=4mm,
+	listing only,
+	listing options={
+		language=#2,
+		basicstyle=\ttfamily\small,
+		keywordstyle=\color{codekeyword}\bfseries,
+		commentstyle=\color{codecomment}\itshape,
+		stringstyle=\color{codestring},
+		numbers=left,
+		numberstyle=\tiny\color{codecomment},
+		stepnumber=1,
+		numbersep=8pt,
+		showstringspaces=false,
+		breaklines=true,
+		breakatwhitespace=true,
+		tabsize=4
+	},
+	#1
+}
+
+
+%---------------------------------------------------------%
+% BLOCK 10: FRONTPAGE & LAYOUT ENGINES
+%---------------------------------------------------------%
+
+\usepackage{background}                         % Background images utility
+\usepackage{ragged2e}                           % Advanced text alignment
+
+
+% Parametrized Frontpage layout command
+\newcommand\frontpage[1][1]{
+	\hypersetup{pageanchor=false}                   
+	\ifnum#1<10
+	\input{frontpages/frontpage0#1.tex}
+	\else
+	\input{frontpages/frontpage#1.tex}
+	\fi
+}
+
+
+% Thesis indexes generation command
+\newcommand\thesisindex[1][]{
+	\hypersetup{pageanchor=true}                    
+	\pagenumbering{roman}
+	{
+		\pagestyle{indexpage}
+		\hypersetup{linkcolor=black}
+		\tableofcontents
+		
+		\newpage
+		\listoffigures
+		\listoftables
+		
+		\newpage
+		\printnoidxglossary[type=\acronymtype,title=Acronyms]
+	}
+	\newpage\null\newpage
+	\clearpage
+}
+
+% Quotation environment for courtesy pages
+\NewDocumentEnvironment{thesisquoteenv}{m +b}{%
 	\vspace*{\fill}
 	\par\addvspace{\topsep}
 	\begin{samepage}
-			\raggedleft\guillemotright#2\guillemotleft
+		\raggedleft\guillemotright#2\guillemotleft
 		\par\nopagebreak
 		{\footnotesize\raggedleft\textbf{#1}\par}
 	\end{samepage}%
@@ -482,534 +323,47 @@ autopunct=false,giveninits=true]{biblatex}
 	\vspace*{\fill}
 }{}
 
-
-% CREAR TABLA DE CONTENIDOS AL PRINCIPIO DEL DOCUMENTO
-\newcommand\thesisindex[1][]{
-	
-		\newpage\null\thispagestyle{empty}\newpage
-		\thispagestyle{empty}
-		\begin{textquote}{Dan Millman}
-			A warrior does not give up what he loves, he finds the love in what he does.
-		\end{textquote}
-		
-		\newpage\null\thispagestyle{empty}\newpage
-		\pagenumbering{roman}
-		{
-			\pagestyle{indexpage}
-			\hypersetup{linkcolor=black}
-			\tableofcontents
-			
-			\newpage
-			\listoffigures
-			\listoftables
-			
-			\newpage
-			\printnoidxglossary[type=\acronymtype,title=Índice de acrónimos]
-		}
-		
-		\newpage\null\newpage
-		\clearpage
+% Optional quotation page generation command
+\newcommand\thesisquotepage[1][]{
+	\thispagestyle{empty}
+	\begin{thesisquoteenv}{\thesisquoteauthor}
+		\thesisquote
+	\end{thesisquoteenv}
+	\newpage\null\thispagestyle{empty}\newpage
 }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{appendix} % APORTA ALGUNAS CARACTERÍSTICA AL APÉNDICE O ANEXO DEL DOCUMENTO
-
-% PARA QUE EL APÉNDICE SE LLAME ANEXO
-\renewcommand{\appendixname}{Anexos}
-\renewcommand{\appendixtocname}{Anexos}
-\renewcommand{\appendixpagename}{Anexos}
-
-% COMPLEMENTOS EN CADA CAPÍTULO
-\AtBeginEnvironment{subappendices}{%
-	\section*{Complementos}
-	\addcontentsline{toc}{section}{\textbf{Complementos Capítulo \thechapter}}
-	\counterwithin{figure}{section}
-	\counterwithin{table}{section}
+% Parametrized Acknowledgments page layout command
+\newcommand\thesisacknowledgments[1][]{
+	\pagestyle{indexpage}
+	\input{sections/acknowledgments.tex}     	% Load acknowledgments content
+	\clearpage
+	\newpage\null\thispagestyle{empty}\newpage	% Blank transition page
 }
 
-\AtEndEnvironment{subappendices}{%
-	\counterwithout{figure}{section}
-	\counterwithout{table}{section}
+% Parametrized Abstract page layout command (resets numbering to Arabic)
+\newcommand\thesisabstract[1][]{
+	\clearpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	\pagestyle{abastractpage}
+	\phantomsection
+	\addcontentsline{toc}{section}{Abstract} 
+	\input{sections/abstract.tex}           	% Load abstract content
+	\clearpage
+	\pagestyle{documentpage}               		% Set standard page styling
 }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{background} % PARA PONER IMÁGENES DE FONDO
-
-% FONDO DE LA PORTADA Y TIPO DE LETRA
-%\newcommand\imagendefondoportada[1]{
-\newcommand\imagendefondoportada{
-	\backgroundsetup{
-		scale=1.3,
-		color=black,
-		opacity=1,
-		angle=0,
-		contents={%
-			%\includegraphics[width=\paperwidth,height=\paperheight]{#1}
-			\includegraphics[width=\paperwidth,height=\paperheight]{imagenportada.jpg}
-		}%
-	}
-	\BgThispage}
-
-\newcommand*{\fuenteportada}{\fontfamily{pag}\selectfont}
-
-
-% FONDOS PÁGINA PARA CAPÍTULOS
-
-%\newcommand\imagendefondocapitulo[1]{
-\newcommand\imagendefondocapitulo{
-	\backgroundsetup{
-		scale=1.35,
-		color=black,
-		opacity=1,
-		vshift=-207pt,
-		angle=180,
-		contents={%
-			%\includegraphics[width=\paperwidth,height=0.25\paperheight]{#1}
-			\includegraphics[width=\paperwidth,height=0.25\paperheight]{imagencapitulo.jpg}
-		}%
-	}
-	\BgThispage}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\usepackage{ragged2e} % PARA ALINEAR EL TEXXTO CON \RaggedRight, \RaggedLeft, \Centering O \justifying
-% ESTE PAQUETE VIENE A MEJORAR LAS CARACTERÍSTICAS BASCICAS DE LATEX (ESCRITAS IGUAL EN MINÚSCULAS)
-% ADEMÁS PROPORCIONA LOS ENTORNOS FlushRight, FlushLeft Y Center PARA MEJORAR LOS PREDEFININIDOS
-\usepackage{schemata} % PAQUETE PARA PODER HACER ESQUEMAS DE LLAVES
-\newcommand\AB[2]{\schema{\schemabox{#1}}{\schemabox{#2}}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[most]{tcolorbox} % PAQUETE PARA PODER HACER CAJAS DE COLORES ALREDEDIR DEL TEXTO
-\usepackage{empheq} % PARA HACER CAJAS DE COLORES
-\tcbuselibrary{theorems} % LIBRERÍA PARA LAS CAJAS DE COLOR
-
-% CAJA AMARILLA
-\newcommand\recuadroamarillo[1]{
-	\hspace{0.5cm}\tcboxmath[colback=white,colframe=colorrecuadro,boxrule=4pt]{
-%	\hspace{0.5cm}\tcboxmath[colback=white,colframe=black,boxrule=4pt]{
-		\bm{\textcolor{colorecuacion}{
-				#1
-		}}
-	}
-}
-
-\newtcbox{\othermathbox}[1][]{nobeforeafter, math upper, tcbox raise base, 
-          enhanced, colback=white,colframe=colorrecuadro,boxrule=4pt}
-
-% PARA TENER VARIAS ECUACIONES RECUADRADAS Y ALINEADAS
-\newcommand\ecrecuadradas[1]{
-	\ecazul{
-				\begin{empheq}[box=\othermathbox]{align}
-				&\ Arreglar\ color\ numero\ ecuacion \nonumber\\
-					#1
-				\end{empheq}
-				}
-}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[shortlabels]{enumitem} %PARA UTILIZAR LETRAS EN EL ENTORNO ENUMERATE (Arturo: he añadido lo que está entre corchetes, no se si afecta a la función para lo que lo usabas) 
-
-% PERSONALIZACIÓN DE LA NUMERACIÓN
-\setlist[enumerate,1]{label=\textbf{\Roman{enumi}}} % NÚMEROS ROMANOS EN MAYÚSCULA PRIMER NIVEL DE ENUMERATE
-\setlist[enumerate,2]{label=\theenumi.\arabic*} % NÚMEROS NORMALES SEGUNDO NIVEL DE ENUMERATE
-\setlist[enumerate,3]{label=\theenumii.\alph*} % LETRAS TERCER NIVEL DE ENUMERATE
-%\setlist[enumerate]{wide=0pt} % PARA QUE NO HAYA INDENTACION
-
-% PARA ITEMIZE
-\renewcommand\labelitemi{-}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{blindtext} % PARA CREAR TEXTO EN BLANCO
-%\usepackage[angle=45,scale=0.95,text=Versión 0.1,color={[HTML]{FFC8E9}}]{draftwatermark}% PARA CREAR UNA MARCA DE AGUA
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% PAQUETES RELACIONADOS CON COPIAR CÓDIGO DE PROGRAMACIÓN
-
-\iffalse  % SOLO CTIVAR EN CASO DE TENER CÓDIGO QUE COPIAR
-\usepackage{minted} % PAQUETE QUE USA PYHTON PARA PODER GESTIONAR EL CODIGO EN LATEX
-% CONFIGURACION DE MINTED
-\setminted{
-  linenos,
-  mathescape,
-  escapeinside=!!, 
-  breaklines=true, 
-  breakafter={\space}, 
-  breakbytokenanywhere=true,
-  breakautoindent=true
-}
-
-\renewcommand{\theFancyVerbLine}{\textcolor[rgb]{0.0,0.0,0.0}{\normalsize \oldstylenums{\arabic{FancyVerbLine}}}}
-
-% DECLARACIÓN DE CARACTERES PARA COPIAR EL CODIGO
-\DeclareUnicodeCharacter{1D6FF}{$\delta$}
-\DeclareUnicodeCharacter{0394}{$\Delta$}
-\DeclareUnicodeCharacter{03B1}{$\alpha$}
-\DeclareUnicodeCharacter{03B2}{$\beta$}
-\DeclareUnicodeCharacter{03B3}{$\gamma$}
-\DeclareUnicodeCharacter{03B8}{$\theta$}
-\DeclareUnicodeCharacter{03BB}{$\lambda$}
-
-\fi
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% COSAS NUEVAS CREADAS A NECESIDAD Y GUSTO
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% NUEVOS ENTORNOS
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DEFINICIÓN
-\newcounter{definicion}[section]
-\newenvironment{definicion}[1][]{
-	\refstepcounter{definicion}
-	\par\medskip\noindent 
-	\large{\textbf{\textcolor{colordefinicion}{Definición \thechapter.\thedefinicion:}}} \normalsize{#1}
-}
-{\par\medskip\noindent
-	\noindent\textcolor{colordefinicion}{\rule{12mm}{0.1mm}}
-	\rmfamily}
-
-%\newcounter{definicion}[section]
-\newenvironment{definicioncaja}[3][]{
-	\refstepcounter{definicion}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,
-		colback=colordefinicion!5!white,
-		colframe=colordefinicion!75!white,
-		title=\large{\textbf{\textcolor{black}{Definición \thechapter.\thedefinicion: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 	
-}
-
-%\newcounter{definicion}[section]
-\newenvironment{definicionlinea}[3][]{
-	\refstepcounter{definicion}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,skin=enhancedmiddle,
-		frame hidden,interior hidden,top=2mm,bottom=0mm,boxsep=0mm,
-		borderline west={0.75mm}{0mm}{colordefinicion!100!white},
-		borderline west={0.75mm}{0.75mm}{colordefinicion!50!white},
-		borderline west={0.75mm}{1.5mm}{colordefinicion!25!white}, title=\large{\textbf{\textcolor{colordefinicion}{Definición \thechapter.\thedefinicion: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% NOTAS
-\newcounter{nota}[section]
-\newenvironment{nota}[1][]{
-	\refstepcounter{nota}
-	\par\medskip\noindent 
-	\large{\textbf{\textcolor{colornota}{Nota \thechapter.\thenota:}}} \normalsize{#1}
-}
-{\par\medskip\noindent
-	\noindent\textcolor{colornota}{\rule{12mm}{0.1mm}}
-	\rmfamily}
-
-%\newcounter{nota}[section]
-\newenvironment{notacaja}[3][]{
-	\refstepcounter{nota}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,
-		colback=colornota!5!white,
-		colframe=colornota!75!white,
-		title=\large{\textbf{\textcolor{black}{Nota \thechapter.\thenota: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 	
-}
-
-%\newcounter{nota}[section]
-\newenvironment{notalinea}[3][]{
-	\refstepcounter{nota}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,skin=enhancedmiddle,
-		frame hidden,interior hidden,top=2mm,bottom=0mm,boxsep=0mm,
-		borderline west={0.75mm}{0mm}{colornota!100!white},
-		borderline west={0.75mm}{0.75mm}{colornota!50!white},
-		borderline west={0.75mm}{1.5mm}{colornota!25!white}, title=\large{\textbf{\textcolor{colornota}{Nota \thechapter.\thenota: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% EJEMPLOS
-\newcounter{ej}[section]
-\newenvironment{ej}[1][]{
-	\refstepcounter{ej}
-	\par\medskip\noindent 
-	\large{\textbf{\textcolor{colorejemplo}{Ejemplo \thechapter.\theej:}}}\normalsize{#1}
-}
-{\par\medskip\noindent
-	\noindent\textcolor{colorejemplo}{\rule{12mm}{0.1mm}}
-	\rmfamily}
-
-%\newcounter{ej}[section]
-\newenvironment{ejcaja}[3][]{
-	\refstepcounter{ej}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,
-		colback=colorejemplo!5!white,
-		colframe=colorejemplo!75!white,
-		title=\large{\textbf{\textcolor{white}{Ejemplo \thechapter.\theej: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-}
-
-%\newcounter{ej}[section]
-\newenvironment{ejlinea}[3][]{
-	\refstepcounter{ej}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,skin=enhancedmiddle,
-		frame hidden,interior hidden,top=2mm,bottom=0mm,boxsep=0mm,
-		borderline west={0.75mm}{0mm}{colorejemplo!100!white},
-		borderline west={0.75mm}{0.75mm}{colorejemplo!50!white},
-		borderline west={0.75mm}{1.5mm}{colorejemplo!25!white}, title=\large{\textbf{\textcolor{colorejemplo}{Ejemplo \thechapter.\theej: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DEMOSTRACIÓN
-\newcounter{demo}[section]
-\newenvironment{demo}[1][]{
-	\refstepcounter{demo}
-	\par\medskip\noindent 
-	\large{\textbf{\textcolor{colorecuacion}{Demostración \thechapter.\thedemo:}}} \normalsize{#1}
-}
-{\par\medskip\noindent
-	\noindent\textcolor{colorecuacion}{\rule{12mm}{0.1mm}}
-	\rmfamily}
-
-%\newcounter{demo}[section]
-\newenvironment{democaja}[3][]{
-	\refstepcounter{demo}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,
-		colback=colorecuacion!5!white,
-		colframe=colorecuacion!100!white,
-		title=\large{\textbf{\textcolor{white}{Demostración \thechapter.\thedemo: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-	
-}
-
-%\newcounter{demo}[section]
-\newenvironment{demolinea}[3][]{
-	\refstepcounter{demo}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,skin=enhancedmiddle,
-		frame hidden,interior hidden,top=2mm,bottom=0mm,boxsep=0mm,
-		borderline west={0.75mm}{0mm}{colorecuacion!100!white},
-		borderline west={0.75mm}{0.75mm}{colorecuacion!50!white},
-		borderline west={0.75mm}{1.5mm}{colorecuacion!25!white},
-		title=\large{\textbf{\textcolor{colorecuacion}{Demostración \thechapter.\thedemo: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-	
-}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DESARRPOLLO MATEMATICO
-\newcounter{desa}[section]
-\newenvironment{desa}[1][]{
-	\refstepcounter{desa}
-	\par\medskip\noindent 
-	\large{\textbf{\textcolor{colorecuacion}{Desarrollo \thechapter.\thedesa:}}} \normalsize{#1}
-}
-{\par\medskip\noindent
-	\noindent\textcolor{colorecuacion}{\rule{12mm}{0.1mm}}
-	\rmfamily}
-
-%\newcounter{desa}[section]
-\newenvironment{desacaja}[3][]{
-	\refstepcounter{desa}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,
-		colback=colorecuacion!5!white,
-		colframe=colorecuacion!100!white,
-		title=\large{\textbf{\textcolor{white}{Desarrollo \thechapter.\thedesa: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-	
-}
-
-%\newcounter{desa}[section]
-\newenvironment{desalinea}[3][]{
-	\refstepcounter{desa}
-	\par\medskip\noindent 
-	\begin{tcolorbox}[enhanced jigsaw,breakable,skin=enhancedmiddle,
-		frame hidden,interior hidden,top=2mm,bottom=0mm,boxsep=0mm,
-		borderline west={0.75mm}{0mm}{colorecuacion!100!white},
-		borderline west={0.75mm}{0.75mm}{colorecuacion!50!white},
-		borderline west={0.75mm}{1.5mm}{colorecuacion!25!white},
-		title=\large{\textbf{\textcolor{colorecuacion}{Desarrollo \thechapter.\thedesa: #2}}}]
-		{#3}
-	\end{tcolorbox}
-	\par\medskip\noindent 
-	
-}
-
-
-% PROBLEMAS
-\newcounter{problema}[section]
-\newenvironment{problema}[1][]{
-	\refstepcounter{problema}
+% Parametrized Bibliography page layout command
+\newcommand\thesisbibliography[1][]{
+	\clearpage
 	\newpage
-	\addcontentsline{toc}{section}{\protect\numberline{}Problema \thechapter.\theproblema}
-	\noindent
-	\large{\textbf{\textcolor{colorseccion}{PROBLEMA \thechapter.\theproblema}}} 
-	\par\medskip\noindent
-	\normalsize{#1}
-}
-{\par\medskip\noindent
-	\noindent\textcolor{colorseccion}{\rule{12mm}{0.1mm}}
-	\rmfamily}
-
-
-\newenvironment{problemauno}[1][]{
-	\refstepcounter{problema}
-	\addcontentsline{toc}{section}{\protect\numberline{}Problema \thechapter.\theproblema}
-	\noindent
-	\large{\textbf{\textcolor{colorseccion}{PROBLEMA \thechapter.\theproblema}}} 
-	\par\medskip\noindent
-	\normalsize{#1}
-}
-{\par\medskip\noindent
-	\noindent\textcolor{colorseccion}{\rule{12mm}{0.1mm}}
-	\rmfamily}
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% NUEVOS COMANDOS PARA EXPRESIONES COMPLEJAS DE ASIGNATURAS
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MECÁNICA Y ONDAS
-\newcommand\ori[1][\mathrm{O}]{{$ #1 $ }} % ORIGEN DEL SISTEMA DE REFERENCIA INERCIAL
-\newcommand\oripri[1][\mathrm{O}^{\prime}]{{$ #1 $ }} % ORIGEN DEL SISTEMA DE REFERENCIA NO INERCIAL
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MECÁNICA TEÓRICA
-\newcommand{\e}{$e^{-}$}
-\newcommand{\p}{$p^{+}$}
-\newcommand{\gap}{$\Delta E_G$}
-\newcommand{\gapec}{\Delta E_G}
-\newcommand{\qa}{q^{\alpha}}
-\newcommand{\qbe}{q^{\beta}}
-\newcommand{\pa}{p_{\alpha}}
-\newcommand{\pbe}{p_{\beta}}
-\newcommand{\qp}{\dot{q}}
-\newcommand{\pp}{\dot{p}}
-\newcommand{\qpa}{\dot{q}^{\alpha}}
-\newcommand{\qpbe}{\dot{q}^{\beta}}
-\newcommand{\ppa}{\dot{p}^{\alpha}}
-\newcommand{\ppbe}{\dot{p}^{\beta}}
-\newcommand{\qpp}{\ddot{q}}
-\newcommand{\ppp}{\ddot{p}}
-\newcommand{\qppa}{\ddot{q}^{\alpha}}
-\newcommand{\qppbe}{\ddot{q}^{\beta}}
-\newcommand{\pppa}{\ddot{p}^{\alpha}}
-\newcommand{\pppbe}{\ddot{p}^{\beta}}
-\newcommand{\ecEL}{\dfrac{d}{dt}\left(\dfrac{\partial L}{\partial \qpa}\right)-\dfrac{\partial L}{\partial \qa}=0} % ECUACIÓN GENERAL DE EULER-LAGRANGE
-
-%%%%% OTROS
-\hyphenation{back-pro-pa-ga-tion ex-tre-ma-da-men-te re-tro-pro-pa-ga-ción di-men-si-o-na-li-dad com-pu-ta-ci-o-nal fun-da-ci-o-na-les au-to-rre-gre-si-vo es-pe-cí-fi-cos en-san-cha-mien-tos pa-ra-me-ters auto-re-gres-si-ve re-pre-sen-ta-tions im-ple-men-ted}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\usepackage{lineno}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% PORTADA CON IMAGEN DE FONDO
-\newcommand\frontpage[1][]{
-		\begin{titlepage}{
-		\fuenteportada
-		\centering
-		\vspace*{1cm}
-		{\LARGE\textbf{UNIVERSIDAD DE LA LAGUNA}\par}
-		\vspace*{0.5cm}
-		{\Large\scshape{Science Faculty}\par}
-		\vspace*{1cm}
-		{\Large\scshape\textbf{Instituto de Astrofísica de Canarias}\par}
-		\vspace*{0.3cm}
-		{\Large{Astrophysics Master Degree}\par}
-		\vspace*{1cm}
-		{\Large\scshape\textbf{Master's Thesis}\par}
-		
-		\vspace*{1cm}
-		{\Huge\scshape\textbf{
-				Foundation Models for Astronomy
-				}\par}
-		
-		{\large\textbf{
-				Developing a multimodal foundation model for Astronomy}\par}
-		
-		\vspace*{2cm}
-		{\LARGE\scshape\textbf{Víctor Alonso Rodríguez}\par}
-		\vspace*{1cm}
-		{\large{Supervisors:}\par}
-		\vspace*{0.1cm}
-		{\Large{Marc Huertas-Company \\ Małgorzata Siudek \\ Mike Smith}\par}
-		\vspace*{1cm}
-		{\Large{July 2026}\par}
-	}
-	
-	\begin{figure}[h]
-		\centering
-		\begin{subfigure}[t]{0.49\linewidth}
-			\centering
-			\includegraphics[width=1.25\textwidth]{logo_ULL.png}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}[t]{0.49\linewidth}
-			\centering
-			\includegraphics[width=0.5\textwidth]{logo_IAC.pdf}
-		\end{subfigure}
-	\end{figure}		
-	
-	\end{titlepage}
+	\pagestyle{abastractpage}
+	\printbibliography[heading=bibintoc]     	% Generate bibliography index
 }
 
- 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%---------------------------------------------------------%
+% BLOCK 11: USER CONFIGURATION INPUTS (AL FINAL)
+%---------------------------------------------------------%
+\input{configuration/metadata}            		% Load academic metadata
+\input{configuration/style}               	    % Load styling configurations

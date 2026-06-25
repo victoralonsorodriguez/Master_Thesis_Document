@@ -1,80 +1,53 @@
 % !TeX spellcheck = en_GB
-\documentclass[11pt,a4paper,final]{article}
 
+\documentclass[11pt,a4paper]{article}
+
+%------------ TEMPLATE CONFIGURATIONS ------------%
 \input{MasThesis_Document_Preamble}
 
+%------------ SELECTIVE COMPILATION ------------%
 \includeonly{
-%Sections/00_Acknowledgments.tex,
-%Sections/01_Abstract.tex,
-%Sections/02_Introduction.tex,
-%Sections/03_Theoretical_Background.tex,
-%Sections/04_Data.tex,
-Sections/05_Development.tex,
-%Sections/06_Results.tex,
-%Sections/07_Conclusions.tex
+	sections/02_Introduction.tex,
+	sections/03_Theoretical_Background.tex,
+	sections/04_Data.tex,
+	sections/05_Development.tex,
+	sections/06_Results.tex,
+	sections/07_Conclusions.tex
 }
 
+%---------------------------------------------------------%
+% BODY DOCUMENT
+%---------------------------------------------------------%
 \begin{document}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\frontpage
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\thesisindex
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\pagestyle{indexpage}
-\input{Sections/00_Acknowledgments.tex}
-\clearpage
-\newpage\null\thispagestyle{empty}\newpage
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\pagenumbering{arabic}
-\setcounter{page}{1}
-\pagestyle{abastractpage}
-
-\linenumbers %%%%%%%%% 
-
-
-\addcontentsline{toc}{section}{Abstract/Resumen} 
-\include{Sections/01_Abstract.tex}
-\clearpage
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\pagestyle{documentpage}
-\newpage
-\include{Sections/02_Introduction.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
-\include{Sections/03_Theoretical_Background.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
-\include{Sections/04_Data.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
-\include{Sections/05_Development.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
-\include{Sections/06_Results.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
-\include{Sections/07_Conclusions.tex}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\newpage
-\pagestyle{abastractpage}
-\printbibliography[heading=bibintoc]
-
-
-
-
-
-
+	
+	%------------ FRONT MATTER ------------%
+	\frontpage[1]                                   
+	\thesisquotepage                                
+	\thesisindex                                    
+	\thesisacknowledgments                          
+	\thesisabstract                                 
+	
+	%------------ DOCUMENT UTILITIES ------------%
+	\linenumbers                                  
+	
+	%------------ MAIN CONTENT ------------%
+	\include{sections/02_Introduction.tex}           
+	\include{sections/03_Theoretical_Background.tex}                  
+	\include{sections/04_Data.tex}            
+	\include{sections/05_Development.tex}
+	\include{sections/06_Results.tex}
+	\include{sections/07_Conclusions.tex}
+	
+	%------------ BIBLIOGRAPHY ------------%
+	\thesisbibliography                             
+	
 \end{document}
+
+
+
+
+
+
+
+
+

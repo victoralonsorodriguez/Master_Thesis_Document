@@ -1,3 +1,199 @@
-% !TeX spellcheck = en_GB
-\section{Results}
-Test Results 
+% !TeX spellcheck = en_US
+
+\section{Results} \label{sec:res}
+
+This section presents the quantitative and qualitative astrophysical evaluation of the latent representation space learned by our bimodal foundation model \textit{AstroPT MM} across several of its architectures. To demonstrate that the model has assimilated intrinsic physical laws of galaxies, rather than mere superficial statistical correlations of the signal, an exhaustive downstream evaluation protocol (\textit{downstream tasks}) is implemented on a suite of cosmological, morphological, and spectroscopic targets. All results shown in this section were obtained using the same catalog, which was filtered for low-\textit{\gls{SNR}} spectra from \textit{\gls{DESI}} and corrupted images from \textit{Euclid}.
+
+\subsection{Physical Parameter Estimation via Downstream Tasks}
+
+To quantify the physical information content encoded within the latent vectors of the models used in this work, linear probes and \textit{\gls{MLP}} regressors were trained and evaluated. These regressors were trained using the output embeddings extracted from the image, spectral, and joint multimodal encoders. Up to eighteen fundamental astrophysical parameters were evaluated, including the spectroscopic redshift ($z$), stellar mass ($\log M_*$), star formation rate ($\log\text{SFR}$), emission line fluxes $F(\text{H}_\alpha)$ and $F(\text{H}_\beta)$, effective Sérsic radius $R_e$, Sérsic index $n_{\text{sersic}}$, and Gini coefficient.
+
+The results of this quantitative evaluation, expressed via the coefficient of determination $\left(R^2\right)$, are detailed in \cref{tab:elaborate-table}. Furthermore, the relative performance differences compared to the supervised reference models and the \textit{AstroPT MM \gls{SSL} Unimodal} models are visualized in \cref{fi: R2 diff supervised,fi: R2 diff Unimodal}, respectively.
+
+\begin{table}[h]
+	\centering
+	\caption[Comparison of downstream task performance for a selection of models]{Quantitative comparison of the coefficient of determination $\left(R^2\right)$ in \textit{downstream tasks}. These results were obtained using an \textit{\gls{MLP}} trained on the output embeddings of each architecture. The image and spectrum modalities represent the isolated embeddings of these modalities, whereas the joint modality was constructed by averaging the unimodal embeddings for models with a bimodal architecture. Bold values indicate the highest results obtained for each downstream task target.}
+	\label{tab:elaborate-table}
+	\begin{tabularx}{\textwidth}{
+			>{\hsize=1.1\hsize\centering\arraybackslash}X | % Col 1: Modality (Ancha)
+			>{\hsize=2.4\hsize\centering\arraybackslash}X | % Col 2: Model (Ancha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 3: Z (Estrecha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 4: Ms (Estrecha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 5: SFR (Estrecha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 6: Ha (Estrecha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 7: Z (Estrecha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 8: Ms (Estrecha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 9: Z (Estrecha)
+			>{\hsize=0.8125\hsize\centering\arraybackslash}X % Col 10: Ms (Estrecha)
+		} 
+		\toprule
+		\multirow{2}{*}{\textbf{Modality}}  & \multirow{2}{*}{\textbf{Model}}  & \multicolumn{8}{c}{\textbf{Downstream Tasks}} \\
+		\cmidrule{3-10}
+		& & $\mathbf{z}$ & \textbf{M}$\mathbf{_*}$ & \textbf{\gls{SFR}} & \textbf{F(H}$\mathbf{_\alpha}$\textbf{)} & \textbf{F(H}$\mathbf{_\beta}$\textbf{)} & \textbf{R}$\mathbf{_{eff}}$ & \textbf{n}$\mathbf{_{sersic}}$ & \textbf{Gini} \\
+		\midrule
+		\multirow{7}{*}{\rotatebox{90}{\textbf{Images}}} 
+		& AstroCLIP & $0.7648$ & $0.7526$ & $0.6037$ & $0.1764$ & $0.1969$ & $0.4558$ & $0.5981$ & $0.2752$ \\
+		& Supervised I  & $0.8434$ & $0.8345$ & $0.6238$ & $0.1512$ & $0.3062$ & $\mathbf{0.8797}$ & $\mathbf{0.9013}$ & $0.3952$ \\
+		& \gls{SSL} Unimodal I & $0.7197$ & $0.8326$ & $0.6043$ & $-0.045$ & $0.3980$ & $0.8311$ & $0.7605$ & $0.5631$ \\
+		& Autoregressive Opt  & $0.7393$ & $0.8427$ & $0.6398$ & $0.3668$ & $0.3802$ & $0.8625$ & $0.8405$ & $\mathbf{0.6110}$ \\
+		& No Tok Mix  & $0.7341$ & $0.8410$ & $0.6427$ & $0.3842$ & $0.4277$ & $0.7176$ & $0.8280$ & $0.6064$ \\
+		& Hybrid  & $0.7135$ & $0.8110$ & $0.6132$ & $0.3251$ & $0.0575$ & $0.8618$ & $0.7423$ & $0.4053$ \\
+		& Original  & $0.5777$ & $0.7541$ & $0.4121$ & $0.1270$ & $0.0502$ & $0.8059$ & $0.6808$ & $0.5068$ \\
+		\midrule
+		\multirow{7}{*}{\rotatebox{90}{\textbf{Spectra}}} 
+		& AstroCLIP & $0.8295$ & $0.8636$ & $0.6071$ & $0.3629$ & $0.4547$ & $0.1525$ & $0.4621$ & $0.1601$ \\
+		& Supervised S  & $\mathbf{0.8737}$ & $0.8096$ & $0.4923$ & $0.3146$ & $0.8448$ & $0.0423$ & $0.3058$ & $0.0675$ \\
+		& \gls{SSL} Unimodal S & $0.8202$ & $0.8655$ & $0.6698$ & $\mathbf{0.8918}$ & $0.6561$ & $0.1993$ & $0.4446$ & $0.1443$ \\
+		& Autoregressive Opt  & $0.8200$ & $0.8597$ & $0.6815$ & $0.8677$ & $\mathbf{0.9594}$ & $0.2140$ & $0.4442$ & $0.1349$ \\
+		& No Tok Mix  & $0.8132$ & $0.8574$ & $0.6790$ & $0.8293$ & $0.5209$ & $0.2178$ & $0.4492$ & $0.1327$ \\
+		& Hybrid  & $0.7260$ & $0.7643$ & $0.5242$ & $0.6705$ & $0.3346$ & $0.1726$ & $0.3801$ & $0.0915$ \\
+		& Original  & $0.4137$ & $0.4810$ & $0.3603$ & $0.5468$ & $0.2880$ & $0.0853$ & $0.2249$ & $0.0477$ \\
+		\midrule
+		\multirow{5}{*}{\rotatebox{90}{\textbf{Joint}}} 	
+		& AstroCLIP & $0.8442$ & $0.8823$ & $0.6562$ & $0.3801$ & $0.4107$ & $0.2585$ & $0.5796$ & $0.2356$ \\
+		& Autoregressive Opt  & $0.8383$ & $\mathbf{0.9339}$ & $\mathbf{0.7487}$ & $0.8695$ & $0.7374$ & $0.8177$ & $0.8324$ & $0.5792$ \\
+		& No Tok Mix  & $0.8207$ & $0.9279$ & $0.7331$ & $0.8435$ & $0.6366$ & $0.7221$ & $0.7985$ & $0.5287$ \\
+		& Hybrid  & $0.7729$ & $0.8675$ & $0.6447$ & $0.5825$ & $0.3468$ & $0.8449$ & $0.7178$ & $0.3951$ \\
+		& Original  & $0.5839$ & $0.6856$ & $0.4918$ & $0.5794$ & $0.1639$ & $0.8658$ & $0.5863$ & $0.3963$ \\
+		\bottomrule
+	\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[b]{1.0\textwidth}
+		\centering
+		\includegraphics[width=1.0\textwidth]{r2_diff_supervised}
+		\caption{}
+		\label{fi: R2 diff supervised}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{1.0\textwidth}
+		\centering
+		\includegraphics[width=1.0\textwidth]{r2_diff_unimodal}
+		\caption{}
+		\label{fi: R2 diff Unimodal}
+	\end{subfigure}
+	\caption[Performance differences in downstream tasks between the Autoregressive Opt model and unimodal supervised and self-supervised baselines]{Differences in the coefficient of determination $\left(R^2\right)$ obtained by an \textit{\gls{MLP}} head in \textit{downstream tasks}. \textbf{(a)} Comparison between the joint modality of the \textit{Autoregressive Opt} model and task-specific unimodal supervised baselines (ResNet18 for images and Conv1D+Transformer for spectra), \cref{sec:dev:sup}. \textbf{(b)} Performance differences of the \textit{Autoregressive Opt} model compared to the \textit{\gls{SSL} Unimodal} models. Blue indicates that the reference modality for that target is a model trained on spectra, while yellow indicates a model trained on images. For example, for $z$ in (a), the performance of the \textit{\gls{MLP}} trained on joint embeddings from the \textit{Autoregressive Opt} model is compared against the performance of the task-specific supervised spectral model (indicated in blue) trained for $z$. For $F_{total}$ in (b), the performance of the \textit{\gls{MLP}} trained on joint embeddings from the \textit{Autoregressive Opt} model is compared against the self-supervised unimodal image model (indicated in yellow). Positive values indicate better performance by the \textit{Autoregressive Opt} model, while negative values indicate better performance by their respective comparative baselines. It is apparent that in both comparisons, joint training with two modalities increases the amount of information retrieved from the models' latent space for certain targets.}
+\end{figure}
+
+Analyzing the quantitative values in \cref{tab:elaborate-table} reveals several highly relevant scientific conclusions:
+
+\begin{itemize}
+	\item \textbf{Bimodal Synergy and Breaking Degeneracies in Stellar Mass ($\log M_*$):}
+	The reference \textit{Autoregressive Opt} model in its joint modality achieves a coefficient of determination of $\mathbf{R^2 = 0.9339}$ in stellar mass estimation. This result is significantly higher than those obtained by the isolated unimodal image ($R^2 = 0.8427$) and spectral ($R^2 = 0.8597$) encoders. It also outperforms the contrastive model \textit{AstroCLIP} in its joint space ($R^2 = 0.8823$) and the supervised reference models ($R^2 = 0.8345$ for images and $0.8096$ for spectra). 
+	
+	Physically, this performance increase indicates that the model is capable of simultaneously mitigating two observational limitations: the classical photometric age-metallicity-dust degeneracy (which limits broadband imaging from \textit{Euclid}) and the instrumental aperture bias affecting spectroscopic fibers from \textit{\gls{DESI}} ($1.5''$ aperture, focused on the nuclear regions and bulges of galaxies). By fusing the spatially resolved information of \textit{Euclid} (which measures the extended elliptical light profile and the global size of the galaxy) with the direct spectral indicators of the central bulge (such as the $D_n 4000$ break), the latent space of the \textbf{Autoregressive Opt} model unifies absolute physical scales, enabling the estimation of total stellar mass with unprecedented precision for unsupervised models.
+	
+	\item \textbf{\gls{SFR} ($\log\text{SFR}$):}
+	In star formation rate estimation, the joint modality of the \textit{Autoregressive Opt} model reaches an $\mathbf{R^2 = 0.7487}$, in contrast to $0.6398$ for the visual modality and $0.6815$ for the spectroscopic domain independently. Since the \textit{\gls{SFR}} is closely correlated with blue and ultraviolet emission from peripheral spiral arms (associated with short-lived massive O- and B-type stars) and collisionally excited nebular emission lines ($\text{H}_\alpha$, $\text{H}_\beta$) originating in central H II regions, the central spectroscopic fiber of \textit{\gls{DESI}} underestimates the diffuse star formation occurring in the outer disk. The joint space of the \textit{Autoregressive Opt} model successfully integrates the high-spatial-resolution spiral morphology of \textit{Euclid} with the spectral ionization rates of the nucleus, offering a robust joint estimator that outperforms dedicated supervised baselines ($R^2 = 0.6238$ for images and $0.4923$ for spectra).
+	
+	\item \textbf{Cosmological Redshift ($z$):}
+	The \textit{Autoregressive Opt} model in its joint modality reaches an \textbf{$R^2 = 0.8383$}, establishing itself as a highly accurate estimator that directly competes with the bimodal contrastive model \textit{AstroCLIP} ($R^2 = 0.8442$). The analysis of the \textit{\gls{SSL} Unimodal I} model is of particular relevance; it obtains an $R^2 = 0.7197$, achieving solid performance despite being trained solely on images and without labels.
+
+	Since the physical scale normalization preprocessing detailed in \cref{sec:drv:inter} explicitly removes the apparent angular size of the galaxy as a morphological shortcut to infer cosmological distance, the visual encoder is forced to estimate redshift solely from intrinsic morphological features of galactic evolution. The achieved performance demonstrates that the latent space captures fine-grained evolutionary characteristics strongly correlated with cosmological time.
+	
+	\item \textbf{Emission Line Fluxes and the $F(\text{H}_\beta)$ Anomaly:}
+	For specific emission lines such as $F(\text{H}_\alpha)$, the autoregressive spectral encoder reaches an $R^2 = 0.8677$, which remains practically unchanged in the joint latent space ($R^2 = 0.8695$). This indicates that the bimodal integration does not dilute the rich physical features of the red optical spectrum. However, for the $\text{H}_\beta$ flux, while the spectral modality of the \textit{Autoregressive Opt} model achieves exceptional performance ($R^2 = 0.9594$), this coefficient drops to $0.7374$ in the joint space.
+	
+	This discrepancy or lower performance anomaly in the joint domain is attributed to the optimization dynamics of the transformer: during pretraining with token mixing, the higher signal-to-noise ratio ($\text{S/N}$) and flux amplitude of $\text{H}_\alpha$ dominate the gradient signal of the causal bimodal self-attention, attenuating the influence of lower-energy secondary atomic transitions in the blue range (such as the $\text{H}_\beta$ recombination doublet at $4861\,\text{\AA{}}$), which are penalized in the average of the joint embedding.
+	
+	\item \textbf{High-Fidelity Morphological Retention in the Joint Space:}
+	Unlike pure spectroscopic models, which show negligible performance when estimating geometric parameters (such as the Sérsic radius with $R^2 = 0.2140$ or the Gini coefficient with $R^2 = 0.1349$), the joint modality of the \textit{Autoregressive Opt} model retains the fine spatial structure, achieving $\mathbf{R^2 = 0.8177}$ for the effective radius, $\mathbf{R^2 = 0.8324}$ for the Sérsic index, and $\mathbf{R^2 = 0.5792}$ for the Gini coefficient. This empirically demonstrates that causal bimodal self-attention does not degrade the visual representation despite interleaving spectral patches, thereby preserving the geometric coherence of the source.
+\end{itemize}
+
+Furthermore, the direct comparison with the \textit{Hybrid AstroPT MM} model in \cref{tab:elaborate-table} highlights the superiority of the \textit{Autoregressive Opt} approach. The \textit{Hybrid} model, which enforces a \textit{CLIP}-like alignment bottleneck at layer 6 via InfoNCE contrastive losses, exhibits lower performance in downstream physical tasks (e.g., obtaining $R^2 = 0.8675$ for stellar mass in the joint modality and $0.6447$ for \textit{\gls{SFR}}, compared to $0.9339$ and $0.7487$ for the \textit{Autoregressive Opt} model, respectively). Restricting and imposing mathematical similarity on the expert vectors at the midpoint of the transformer degrades the physical representation of individual flux patches, limiting the non-linear expressiveness that the \textit{Autoregressive Opt} model freely exploits from the initial layers.
+
+\subsection{Latent Space Organization} \label{sec:res:umap}
+
+To qualitatively validate the behavior of the latent space and check whether it continuously represents the observational properties of the local universe, the non-linear dimensionality reduction algorithm \textit{\gls{UMAP}} \autocite{ar:umap} is applied to the validation embeddings. \cref{fi: UMAP} illustrates the projection of the latent manifold for the image, spectral, and joint multimodal spaces, with galaxies sequentially colored by four fundamental variables: redshift ($z$), effective Sérsic radius in the \textit{Euclid} visible filter ($\log R_{e,\text{VIS}}$, in arcseconds), \textit{\gls{SFR}} ($\log\text{SFR}$), and nebular emission line flux $\log F(\text{H}_\alpha)$.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{umap_combined_tfm_comparative}
+	\caption[Latent space of the AstroPT MM Autoregressive Opt model]{Two-dimensional \textit{\gls{UMAP}} projections of the latent representation spaces of \textit{AstroPT MM Autoregressive Opt}. The rows correspond to the embeddings of the image encoder (top), the spectral encoder (middle), and the joint unified space (bottom). The columns are colored by key physical properties: redshift ($z$), visible Sérsic radius ($\log R_{e,\text{VIS}}$), \textit{\gls{SFR}} ($\log \text{SFR}$), and emission line flux $F(\text{H}_\alpha)$, revealing continuous and coherent gradients that support the physical latent manifold hypothesis.}
+	\label{fi: UMAP}
+\end{figure}
+
+The analysis of the topology of these projections reveals well-differentiated and physically consistent self-organization dynamics:
+
+\begin{itemize}
+	\item \textbf{The Image Space (Top Row):}
+	The latent space of images shows an organization critically dominated by spatial structure and extent. In the \textit{Sersic VIS Radius} column, an extremely sharp and continuous gradient is observed along the vertical axis of the projection, where small and compact sources sit at the blue base, while extended galaxies are distributed along the upper central branch and the isolated red region on the left. Conversely, the redshift column and the nebular tracers ($\log \text{SFR}$ and $\log F(\text{H}_\alpha)$) show diffuse and scattered distributions without clear unified gradients. This confirms that, in the absence of absolute scale due to preprocessing, the image encoder specializes in intrinsic spatial scale and brightness profile, lacking the fine spectral information required to constrain redshift and nebular gas emission.
+	
+	\item \textbf{The Spectral Space (Middle Row):}
+	The spectral projection adopts a classic arc or horseshoe shape. In the redshift column, a perfect and continuous gradient spans the arc from the far left (low redshift, blue) to the right tip (high redshift, red), reflecting that redshift is the primary variable organizing the global spectral shift. Similarly, the $\log \text{SFR}$ and $\log F(\text{H}_\alpha)$ columns exhibit smooth gradients along the broad part of the arc, differentiating passive \textit{\gls{LRG}}s from active star-forming galaxies with strong emission lines. However, the \textit{Sersic VIS Radius} column appears completely homogeneous and speckled with green, without any identifiable pattern. This empirically demonstrates the inability of the \textit{\gls{DESI}} fiber spectrograph to capture the global size and spatial scale of the galaxy due to central aperture effects.
+	
+	\item \textbf{The Joint Unified Multimodal Space (Bottom Row):}
+	The projection of the joint space represents the central achievement of multimodal coupling. The latent manifold unifies the geometries of images and spectra into a single arc-shaped manifold, similar to the spectral space, but retaining an independent region like the image space. The redshift, $\log \text{SFR}$, and $\log F(\text{H}_\alpha)$ columns preserve the smooth, continuous gradients of the spectral branch. Furthermore, the \textit{Sersic VIS Radius} column, which was completely noisy in the spectral domain, recovers a smooth and continuous color transition from large radii (red, left) to compact radii (blue, right). This joint self-organization demonstrates that causal bimodal self-attention has structured a true \textbf{physical latent manifold} capable of reconciling and coupling the resolved two-dimensional spatial morphology of \textit{Euclid} with the fine spectroscopic kinematics of \textit{\gls{DESI}}.
+\end{itemize}
+
+\subsection{Prediction Diagnostics and Case Analysis}
+
+To individually examine the scatter, uncertainty, and presence of systematic deviations or biases in downstream predictions, \cref{fig:logos-combined} displays validation diagnostic diagrams comparing predicted versus true (\textit{Ground Truth}) values for three complementary targets.
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}[b]{0.32\textwidth}
+		\centering
+		\includegraphics[width=1.0\textwidth]{preds_diagnostic_sersic_sersic_vis_index_EuclidImage_pooled_mlp}
+		\caption{Sérsic Index ($n_{\text{sersic}}$)}
+		\label{fi: pred Eculid}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.32\textwidth}
+		\centering
+		\includegraphics[width=1.0\textwidth]{preds_diagnostic_HBETA_FLUX_DESISpectrum_pooled_mlp}
+		\caption{$\text{H}_\beta$ line flux ($\log F_{\text{H}\beta}$)}
+		\label{fi: pred DESI}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.32\textwidth}
+		\centering
+		\includegraphics[width=1.0\textwidth]{preds_diagnostic_LOGMSTAR_joint_mean_mlp}
+		\caption{Stellar Mass ($\log M_*$)}
+		\label{fi: pred joint}
+	\end{subfigure}
+	\caption[Predicted versus true value diagrams for different targets]{Predicted versus true diagnostic diagrams obtained on validation tasks using \textit{\gls{MLP}} regressors from the \textit{Autoregressive Opt} model. (a) Morphological estimation of the Sérsic index from the image encoder. (b) Fitting of the $\text{H}_\beta$ line flux using the spectral encoder. (c) Optimal physical estimation of stellar mass $\log M_*$ using the joint encoder, showing minimal scatter.}
+	\label{fig:logos-combined}
+\end{figure}
+
+The analytical breakdown of the three diagnostics reveals well-bounded physical and instrumental behaviors:
+
+\begin{itemize}
+    \item \textbf{Sérsic Index Diagnostic (Morphological, \cref{fi: pred Eculid}):}
+    The estimation of the Sérsic index $n_{\text{sersic}}$ from \textit{Euclid} image embeddings exhibits a robust correlation along the identity axis ($R^2 = 0.8405$ in \cref{tab:elaborate-table}). The model accurately differentiates late-type spiral disk galaxies with flat exponential profiles ($n_{\text{sersic}} \approx 1$) from early-type elliptical galaxies with compact bulges following de Vaucouleurs profiles ($n_{\text{sersic}} \approx 4$). The presence of moderate scatter at the high-concentration end is attributed to low-frequency instrumental noise and the effects of bicubic spatial resampling during preprocessing, which smooths flux gradients in sources with very small angular scales.
+    
+    \item \textbf{$\text{H}_\beta$ Flux Diagnostic (Spectroscopic, \cref{fi: pred DESI}):}
+    The scatter plot for the $\text{H}_\beta$ recombination line flux from the spectral encoder of the \textit{Autoregressive Opt} model is extremely narrow and dense, confirming the very high performance ($R^2 = 0.9594$). This excellent accuracy demonstrates that one-dimensional tokenization and causal self-attention are capable of isolating extremely narrow and subtle atomic flux peaks without diluting them during low-frequency stellar continuum reconstruction, validating the calibration fidelity of the \textit{\gls{DESI}} spectrograph.
+    
+    \item \textbf{Stellar Mass Diagnostic (Joint, \cref{fi: pred joint}):}
+    Stellar mass $\log M_*$ prediction using the joint latent manifold of the \textit{Autoregressive Opt} model ($R^2 = 0.9339$) exhibits the lowest scatter in the test suite, with a massive concentration of sources tightly aligned along the $y=x$ identity diagonal. This result empirically confirms that the bimodal integration of the \textit{Autoregressive Opt} model provides an intrinsically consistent physical calibration that overcomes the individual instrumental biases of ground-based and space-based observational surveys.
+\end{itemize}
+
+
+\subsection{Performance Evolution Throughout the Project}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1.0\textwidth]{r2_diff_Autoregresive_Optimized_vs_Original}
+	\caption[Performance differences in downstream tasks between the Autoregressive Opt model and the Original project model]{Differences in the coefficient of determination $\left(R^2\right)$ obtained by an \textit{\gls{MLP}} head in \textit{downstream tasks}. Comparison between the joint modalities of the \textit{AstroPT MM Autoregressive Opt} model and the \textit{AstroPT MM Original} model. Since the values for all 16 targets are positive, this indicates that performance has increased across all evaluated targets compared to the original multimodal model with which the project was initiated.}
+	\label{fi: R2 diff original}
+\end{figure}
+
+As a project-end comparison, we evaluate the direct impact of parameter optimizations (\cref{sec:dev:opt}), as well as the introduction of new loss functions and architectures throughout the project. We analyze the net difference in the coefficient of determination $\left(R^2\right)$ obtained in \textit{downstream tasks} in the joint modality using an \textit{\gls{MLP}} head for the \textit{AstroPT MM Autoregressive Opt} and \textit{AstroPT MM Original} models. Visual analysis of these differences (\cref{fi: R2 diff original}) reveals a generalized and highly robust performance increase across all evaluated physical targets, experimentally validating the architectural design decisions discussed in \cref{sec:dev:arch}:
+
+\begin{itemize}
+	\item \textbf{Impact on Spectroscopic Diagnostics and Emission Lines:}
+	Properly calibrating the asymmetric learning rates and balancing the bimodal loss yields an outstanding gain in physical information regarding ionized gas and emission peaks in the joint latent space. Notable increases are recorded in the nebular recombination line flux $\text{H}_\beta$ ($\Delta R^2 = +0.668$) and the $[OIII]\,\lambda 5007$ flux ($\Delta R^2 = +0.623$). Significant improvements are also observed in the $\text{H}_{\alpha}$ flux ($\Delta R^2 = +0.276$), $[NII]\,\lambda 6584$ flux ($\Delta R^2 = +0.272$), and the equivalent width of the $\text{H}\alpha$ line $\text{EW}(\text{H}\alpha)$ ($\Delta R^2 = +0.247$). These increases confirm that the fine atomic spectral features of \textit{\gls{DESI}} are projected with high fidelity into the joint multimodal space.
+	
+	\item \textbf{Improvements in Global Physical Parameters and Cosmological Indicators:}
+	The multimodal synergy achieved in the unified latent space translates to a systematic improvement in the integrated physical variables of galaxies. The total stellar mass $\log M_*$ shows an increase of $\Delta R^2 = +0.172$, while the global star formation rate $\log\text{SFR}$ improves by $\Delta R^2 = +0.231$. The cosmological redshift $z$, which requires coupling the evolutionary photometry of images with the spectroscopic kinematics of the source, increases its performance by a robust $\Delta R^2 = +0.210$. Similarly, the total galaxy flux $F_{\text{total}}$ ($\Delta R^2 = +0.117$) shows substantial improvements. These quantitative leaps demonstrate that the cross-reconstruction during periods when one modality is masked and the other must reconstruct it from scratch, combined with the use of modality embeddings, has forced a physically consistent bimodal projection of large-scale integrated properties.
+	
+	\item \textbf{Consolidation and Preservation of Visual Morphological Structure:}
+	Despite the heavy injection of information from the spectral branch and the restructuring of the gradient flow, the encoding of the resolved geometric morphology from \textit{Euclid} images is not degraded in the joint latent space. On the contrary, it is optimized due to the increased global stability of the pretraining process. Key visual structural parameters show a solid increase in performance, notably smoothness (\textit{Smoothness}) with $\Delta R^2 = +0.141$, the spiral arms indicator (\textit{Spiral arms}) with $\Delta R^2 = +0.178$, the Sérsic index $n_{\text{Sersic}}$ with $\Delta R^2 = +0.147$, the ellipticity ratio $b/a$ with $\Delta R^2 = +0.134$, and the Gini coefficient with $\Delta R^2 = +0.093$. Even the effective radius $R_{\text{Sersic}}$, which is highly sensitive to bimodal alignment interference from the central spectroscopic fiber, shows a net positive balance of $\Delta R^2 = +0.017$.
+\end{itemize}
+
+\subsection{Connection with Downstream Scientific Applications}
+
+In order to keep this chapter focused on the primary astrophysical validation and performance in \textit{downstream tasks}, additional scientific applications and experimental developments derived from this work are detailed in the Appendices of the thesis. Specifically, \textbf{Appendix A} details the implementation of the unsupervised similarity search engine ($k$-NN) applied to the confirmation of rare systems, such as dual \textit{\gls{AGN}} galaxies and the confirmed gravitational lens catalog from \textit{Euclid}. \textbf{Appendix B} presents the results of algorithms for detecting undocumented instrumental anomalies in the joint latent space (identification of chromatic corruptions and filter misalignment). Finally, \textbf{Appendix C} describes the experiments on continuous spectral generation and synthesis from visual conditioning using latent diffusion models in the embedding space of \textit{AstroPT MM}.

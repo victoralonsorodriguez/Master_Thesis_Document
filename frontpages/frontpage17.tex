@@ -1,0 +1,151 @@
+%---------------------------------------------------------%
+% AUTOMATIC STANDALONE WRAPPER
+%---------------------------------------------------------%
+\newif\ifstandalone
+\unless\ifdefined\university
+  \standalonetrue
+\else
+  \standalonefalse
+\fi
+
+\ifstandalone
+  \documentclass[11pt,a4paper]{article}
+  \usepackage[utf8]{inputenc}
+  \providecommand{\coverfont}{\fontfamily{pag}\selectfont}
+  \usepackage{geometry}
+  \usepackage{graphicx}
+  \usepackage{xcolor}
+  \usepackage{subcaption}
+  \usepackage{float}
+  \usepackage[most]{tcolorbox}
+  \geometry{a4paper, margin=2.5cm}
+  \definecolor{primarycolor}{HTML}{000000}
+  \definecolor{headingcolor}{HTML}{000000}
+  \definecolor{covercolor}{HTML}{1A237E}
+  \definecolor{tablerowcolor}{HTML}{F2F2F2}
+  %===========================================================%
+  % WARNING: If using the main template, DO NOT edit these
+  % variables here. Modify them in configuration/metadata.tex.
+  % Only edit these if compiling this cover page standalone.
+  %===========================================================%
+  \newcommand{\university}{UNIVERSITY OF EXCELLENCE}
+  \newcommand{\faculty}{Faculty of Science and Technology}
+  \newcommand{\institution}{Department of Physics and Astronomy}
+  \newcommand{\degree}{Master's Degree in Astrophysics}
+  \newcommand{\worktype}{Master's Thesis}
+  \newcommand{\titleThesis}{Foundation Models for Astronomy}
+  \newcommand{\subtitleThesis}{Developing a multimodal foundation model for Astronomy}
+  \newcommand{\authorThesis}{Firstname Lastname}
+  \newcommand{\supervisors}{Dr. Supervisor Firstname Lastname \\ Dr. Co-Supervisor Firstname Lastname}
+  \newcommand{\dateThesis}{July 2026}
+  \newcommand{\logoUniversity}{../figures/logo_university.png}
+  \newcommand{\logoInstitution}{../figures/logo_department.png}
+  \begin{document}
+\fi
+
+\begin{titlepage}
+	% Left geometry has margin for the left vertical band text
+	\newgeometry{left=5.5cm, right=2.2cm, top=2.2cm, bottom=2.2cm}
+	
+	\noindent
+	\begin{tcolorbox}[
+		enhanced,
+		remember as=verstripbox,
+		overlay={
+			% 1. Vertical Stripe on the left panel (using covercolor)
+			\fill[covercolor] (current page.north west) rectangle ([xshift=4.5cm]current page.south west);
+			
+			% 2. Vertical Text inside the left stripe (rotated 90 degrees)
+			\node[text=white, anchor=center, rotate=90] at ([xshift=2.25cm]current page.west) {
+				\coverfont\fontsize{32}{38}\selectfont\scshape\textbf{\degree}
+			};
+			
+			% 3. Top Black Header Bar (Trabajo de fin de grado / Master's Thesis label box)
+			\fill[black] ([xshift=4.5cm, yshift=-1.0cm]current page.north west) rectangle ([yshift=-2.6cm]current page.north east);
+			
+			% Text inside the black header
+			\node[text=white, anchor=west] at ([xshift=5.2cm, yshift=-1.8cm]current page.north west) {
+				\coverfont\Large\scshape\textbf{\worktype}
+			};
+			
+			% Decorating dots/elements in the upper left corner of the stripe
+			\fill[black] ([xshift=0.5cm, yshift=-0.5cm]current page.north west) rectangle ([xshift=1.5cm, yshift=-1.5cm]current page.north west);
+			\fill[black] ([xshift=1.8cm, yshift=-1.0cm]current page.north west) rectangle ([xshift=2.3cm, yshift=-1.5cm]current page.north west);
+			\fill[black] ([xshift=1.0cm, yshift=-1.8cm]current page.north west) rectangle ([xshift=1.5cm, yshift=-2.3cm]current page.north west);
+			
+			% 4. Semi-transparent background university seal/logo cropped in the bottom-right corner
+			\begin{scope}
+				\clip ([xshift=4.5cm]current page.south west) rectangle (current page.north east);
+				\node[opacity=0.18, anchor=center] at ([xshift=1.5cm, yshift=-1.5cm]current page.south east) {
+					\includegraphics[width=12.0cm, height=12.0cm, keepaspectratio]{\logoUniversity}
+				};
+			\end{scope}
+			
+			% 5. Semi-transparent background department seal/logo cropped in the top-right corner
+			\begin{scope}
+				\clip ([xshift=4.5cm]current page.south west) rectangle (current page.north east);
+				\node[opacity=0.18, anchor=center] at ([xshift=1.5cm, yshift=1.5cm]current page.north east) {
+					\includegraphics[width=12.0cm, height=12.0cm, keepaspectratio]{\logoInstitution}
+				};
+			\end{scope}
+		},
+		boxrule=0pt,
+		frame hidden,
+		interior hidden,
+		width=\textwidth,
+		height=\textheight,
+		valign=top,
+		top=0pt,bottom=0pt,left=0pt,right=0pt
+	]
+		\begin{center}
+			\coverfont
+			
+			% Start main text layout on the right side
+			\vspace*{2.0cm}
+			
+			% Academic metadata
+			{\LARGE\scshape\textbf{\university}\par}
+			\vspace*{0.2cm}
+			{\Large\scshape{\faculty}\par}
+			{\large\scshape{\institution}\par}
+			
+			\vspace*{2.0cm}
+			
+			% Thesis title
+			{\Huge\textbf{\titleThesis}\par}
+			\vspace*{0.4cm}
+			{\large\textit{\subtitleThesis}\par}
+			
+			\vspace*{1.5cm}
+			
+			% Centered author details (standardizing with other templates)
+			{\large{Prepared by:}\par}
+			\vspace*{0.2cm}
+			{\LARGE\textbf{\authorThesis}\par}
+			
+			\vspace*{0.8cm}
+			
+			% Centered supervisors
+			{\large{Supervised by:}\par}
+			\vspace*{0.2cm}
+			{\Large{\supervisors}\par}
+			
+			\vspace*{1.2cm}
+			
+			% Lower date (separating from subtitulo/body)
+			{\large\textbf{Date:} \textbf{\dateThesis}\par}
+			
+			\vspace*{0.6cm}
+		\end{center}
+	\end{tcolorbox}
+	
+	\restoregeometry
+\end{titlepage}
+
+\ifstandalone
+  \let\next\enddocument
+\else
+  \newpage\null\thispagestyle{empty}\newpage
+  \let\next\relax
+\fi
+\next

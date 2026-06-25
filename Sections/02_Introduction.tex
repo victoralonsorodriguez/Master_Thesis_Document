@@ -1,3 +1,149 @@
-% !TeX spellcheck = en_GB
+% !TeX spellcheck = en_US
+
 \section{Introduction}
-Test Introduction 
+
+Is it possible for a machine learning model to infer spectroscopic properties of galaxies from broadband images of the \textit{Euclid Space Telescope}? How much extra knowledge can be extracted by a model trained on \textit{Euclid} images and \textit{DESI} spectra? These are the questions that marked the beginning of this project. Expectations for the possible answer were high. For this reason, the level of dedication, study of current methods in machine learning, and analysis of results has led to the search for alternative architectures to the original one, always aiming to maximize the results for these two questions. This report reflects these efforts, which, far from ending with the completion of this work, lay the foundations and offer results upon which to continue building the future tools for large survey analysis using machine learning foundational models.
+
+
+\subsection{Computational Astrophysics: A Historical Trajectory}
+
+\subsubsection{From Classical Techniques to Deep Learning}
+
+Observational astrophysics has historically been a data-driven discipline, where the need to catalog, classify, and extract physical parameters from millions of celestial sources has continuously stimulated the adoption of computational techniques. The path toward modern multimodal foundational models in this discipline has progressed through three distinct methodological phases: the initial connectionist automation of the late 20th century, massive crowdsourcing through citizen science, and the consolidation of supervised deep learning.
+
+The first wave of automation through artificial intelligence dates back to the late 1980s and 1990s, within the framework of artificial connectionism and classical statistical learning. Pioneering works such as that of \textcite{ar:adorf-1988} explored the use of \textit{\gls{MLP}} to automatically classify astronomical observations from tabular catalogs and early digitalizations. In parallel, \textcite{ar:angel-1990} demonstrated the feasibility of using artificial neural networks for real-time control of actuators in adaptive optics systems for large-aperture telescopes, a critical advancement that allowed for the dynamic compensation of wavefront distortion caused by atmospheric turbulence.
+
+The first major milestone in direct morphological classification on real astronomical images was the automated discrimination between stars and galaxies in digitized wide-field photographic plates. The work of \textcite{ar:odewahn-1992} constituted a fundamental demonstration of how neural networks could process structurally derived descriptors to consistently separate point-like stellar objects from resolved and diffuse galactic sources. In the subsequent decades, classical algorithms such as decision trees \autocites{ar:owens-1996}{ar:bazell-2001} and techniques such as locally weighted regression \autocite{ar:calleja-2004} proved to be effective tools for processing and classifying spectra or images in small datasets. However, these pioneering approaches shared an insurmountable limitation: they required manual and biased feature engineering to select the morphological or spectral descriptors that subsequently fed the classifier.
+
+In the mid-2000s, the commissioning of systematic large-scale ground-based surveys, particularly the \textit{\gls{SDSS}} \autocite{ar:york-2000}, triggered a flood of data that completely overwhelmed the analysis capacity of traditional scientific teams. To address the bottleneck of visually classifying the morphology of hundreds of thousands of galaxies, the astrophysical community turned to massive citizen science through the \textbf{Galaxy Zoo} project \autocite{ar:lintott-2008}. This project collaboratively distributed the morphological classification of galaxies from the \textit{\gls{SDSS}} sample among hundreds of thousands of online volunteers, successfully consolidating millions of independent annotations for nearly $900,000$ galaxies \autocite{ar:lintott-2011}. The evolution of the project into \textit{Galaxy Zoo 2} \autocite{ar:willett-2013} refined these classifications, providing a detailed census of fine structural features such as the presence of stellar bars, the asymmetry of spiral arms, or the prominence of galactic bulges.
+
+
+\subsubsection{The Era of Supervised Convolutional Neural Networks (CNNs)}
+
+The arrival of deep learning in the early 2010s revolutionized morphological and spectral workflows, primarily through the introduction of \textit{\gls{CNN}}s \autocites{ar:huertas-company-2015}{ar:dieleman-2015}{ar:dominguez-sanchez-2018}.
+
+In this context, the contribution of \textit{Galaxy Zoo} was twofold: it not only laid the groundwork for the large-scale study of galaxy morphological evolution, but it also built the high-fidelity annotated datasets necessary for subsequent deep neural network training in astronomy. Thus, citizen science acted as a natural bridge to deep learning. During this era, the manual effort of \textit{Galaxy Zoo} was directly integrated with automated systems. In \textit{Galaxy Zoo DECaLS} \autocite{ar:walmsley-2022}, millions of collected human classifications were used to train an ensemble of Bayesian \textit{\gls{CNN}}s under an active learning scheme, enabling the automated classification of over $314,000$ galaxies with calibrated uncertainty estimates. This hybrid approach reached a new order of magnitude in \textit{Galaxy Zoo DESI} \autocite{ar:walmsley-2023}, where base models previously trained with citizen classifications (such as the \textit{Zoobot} architecture) were scaled to predict detailed morphological features for over $8.7$ million galaxies belonging to the spectroscopic surveys of \textit{\gls{DESI}}.
+
+\textit{\gls{CNN}}s leverage spatially shared filters (kernels) to exploit the translation invariance and local equivariance of image data, mapping raw pixels to discrete morphological classes (such as spiral, elliptical, or irregular) or estimating continuous parameters such as photometric redshifts $\left(z_{\text{phot}}\right)$. The mathematical formulation of the forward pass of a convolutional layer is:
+
+\begin{equation}
+  H^{[l]}_{c} = \sigma \left( \sum_{c'} K^{[l]}_{c, c'} * H^{[l-1]}_{c'} + b^{[l]}_c \right)
+  \label{eq:convolucion_2d}
+\end{equation}
+
+where $*$ denotes the discrete 2D convolution operator, $K$ represents the kernel tensor, and $\sigma$ is a non-linear activation function.
+
+Despite their success in high signal-to-noise ratio regimes, classical \textit{\gls{CNN}}s suffer from fundamental limitations when applied to modern astronomical research:
+
+\begin{itemize}
+  \item \textbf{Task Specificity:} A \textit{\gls{CNN}} trained to classify galaxy morphology cannot generalize to predict stellar masses or reconstruct physical spectra; it is a rigid, single-task model.
+  \item \textbf{Locality Constraints:} The receptive field of a \textit{\gls{CNN}} grows linearly with depth, making it computationally expensive to capture global and non-local physical correlations across distant spatial regions or heterogeneous multi-instrument setups.
+  \item \textbf{Supervision Bottlenecks:} \textit{\gls{CNN}}s depend on large, high-fidelity labeled datasets. In astrophysics, obtaining realistic reference labels (for example, robust visual classifications or high-resolution spectroscopy) is highly labor-intensive and subject to selection and instrumental biases.
+\end{itemize}
+
+\subsubsection{The Paradigm Shift: Specialized Models vs. Foundational Models}
+
+The classical application of machine learning in astrophysics was based on pretraining specialized supervised models \autocites{ar:huertas-company-2015}{ar:dominguez-sanchez-2018} or small-scale \textit{\gls{SSL}} models trained in a unimodal fashion \autocites{ar:hayat-2021}{ar:sarmiento-2021}. Although these models resolved specific classification or regression tasks, they presented severe limitations:
+
+\begin{itemize}
+  \item \textbf{Objective Specialization:} A model trained to estimate photometric redshifts from \textit{\gls{SDSS}} images cannot generalize to classify morphology in \textit{Euclid} images, nor can it infer spectroscopic properties from \textit{\gls{DESI}}. Variations in pixel resolution, filters, or noise levels (domain shift) cause catastrophic failures.
+  \item \textbf{Lack of Cross-Knowledge:} By processing images and spectra separately, classical models miss the intrinsic physical correlation between the galaxy's stellar light distribution (morphology) and the chemical abundances of its gas (spectrum).
+\end{itemize}
+
+The introduction of the \textbf{Transformer} architecture \autocite{ar:attention} and its extension to computer vision via the \textit{\gls{ViT}} \autocite{ar:dosovitskiy-2020} dismantled the locality constraints of \textit{\gls{CNN}}s. By utilizing the global self-attention mechanism \autocite{ar:attention}, the \textit{Transformer} models the relationship between input components in a sequence with a constant path length of $\mathcal{O}\left(1\right)$, regardless of their physical distance or sensory modality.
+
+This transition from local feature modeling to global sequence modeling enabled the emergence of \textit{\gls{MFM}}s \autocite{ar:bommasani-2021} in the physical sciences. Instead of treating images and spectra as isolated and independent datasets, contemporary computational astrophysics architectures project them into a shared latent space. To unify disparate astronomical data, \textit{\gls{MFM}}s transform multiband images, dispersed spectra, and tabular metadata into homogeneous sequences of vectors called \textit{tokens} \autocites{ar:astropt}{ar:astroclip}{ar:aion-1}. In the case of astronomical images, these are divided into local patches (for example, of $16 \times 16$ pixels), linearly projecting each patch to a continuous representation space. To avoid ambiguity, it is important to understand the hierarchy between \textbf{patch} and \textbf{token}: a patch is a discrete two-dimensional spatial or spectral subregion cropped from the original observation (for example, a matrix of $16 \times 16$ pixels of astronomical flux from an image), whereas a \textit{token} is the abstract vector representation of that patch resulting from flattening it and projecting it through the encoder into the embedding space of the \textit{Transformer} model.
+
+Under this scheme, a spatial patch of a galaxy and a channel of an optical spectrum are represented as tokens of a single, unified physical sequence:
+
+\begin{equation}
+  X = \left\{t_{\text{img}, 1}, t_{\text{img}, 2}, \dots, t_{\text{img}, N}, t_{\text{spec}, 1}, \dots, t_{\text{spec}, M}\right\}
+  \label{eq:token_sequence}
+\end{equation}
+
+By modeling the joint distribution of these heterogeneous tokens, the \textit{\gls{MFM}} learns a general representation of the physics of the cosmos. The resulting model acts as a universal feature extractor (backbone) that can be efficiently adapted via \textit{fine-tuning} or \textit{linear probes} to a wide variety of secondary scientific tasks or \textit{downstream tasks}, resolving the physical disconnection of previous approaches.
+
+
+\subsection{The Big Data Frontier and the Observational Bottleneck}
+
+\subsubsection{Next-Generation Surveys}
+
+The current generation of wide-field cosmological surveys is generating data at a volume, velocity, and complexity that render traditional scientific analyses and manual inspection unfeasible. The massive data volume from upcoming observatories requires deep and unsupervised automation:
+
+\begin{itemize}
+  \item \textbf{Vera C. Rubin Observatory / LSST:} The \textit{\gls{LSST}} \autocite{ar:ivezic-2019} represents the ultimate expression of this photometric avalanche. \textit{\gls{LSST}} will observe approximately $18,000$ square degrees of the southern sky, producing about $15$ terabytes of raw data and alert streams per night. Over its $10$-year operational lifetime, it will catalog more than $20$ billion galaxies and $17$ billion stars in six optical bands ($ugrizy$). It will continuously generate about $10$ million alerts of transient or variable sources per night (equivalent to more than $1$ million supernova discoveries per year; \cite{ar:hambleton-2023}). This volume of data translates into processing more than $12$ billion individual image patches per night, imposing unprecedented computational scaling demands. This massive data generation demands machine learning algorithms capable of classifying and selecting targets of scientific interest automatically and without human intervention.
+  
+  \item \textbf{The Euclid Space Mission:} Launched by the European Space Agency (ESA), the \textit{Euclid} space mission \autocite{ar:mellier-2024} will survey approximately $15,000$ square degrees of the extragalactic sky. \textit{Euclid} will detect more than $1$ billion galaxies down to a limiting magnitude of $m_{\text{AB}} \approx 26.2$ using its high-spatial-resolution visible optical instrument (VIS; \cite{ar:cropper-2024}) and its near-infrared photometric and spectroscopic instrument (NISP; \cite{ar:jahnke-2025}). The morphological richness provided by \textit{Euclid} VIS (with a pixel scale of $0.1''$ and a full width at half maximum of $\approx 0.18''$) requires massive automated characterization capabilities to map the morphological evolution of the local and intermediate extragalactic universe.
+\end{itemize}
+
+Traditional parametric analytical fitting (such as modeling two-dimensional Sérsic profiles using CPU-based optimizers like \textit{GALFIT}; \cite{ar:peng-2002,ar:peng-2010}; or \textit{IMFIT}; \cite{ar:erwin-2015}) requires minutes of computation per source. Scaling this classical analytical analysis to the billions of objects in \textit{Euclid} or \textit{LSST} would consume millions of supercomputer CPU-hours, justifying the need to integrate convolutional neural networks and multimodal foundational models capable of producing estimates in microseconds post-pretraining.
+
+\subsubsection{The Challenge of Asymmetry in Observational Data}
+
+A fundamental obstacle in the analysis of astronomical data is cross-modal observational asymmetry. Broadband photometry (imaging) is computationally and observationally inexpensive to obtain, allowing missions like \textit{Euclid} to record two-dimensional fluxes for more than a billion galaxies. In contrast, high-resolution spectroscopy requires the physical positioning of optical fibers on targets and long integration times on large ground-based telescopes, limiting spectroscopic catalogs such as that of \textit{\gls{DESI}} \autocite{ar:desi-early-release} to tens of millions of sources:
+
+\begin{equation}
+  \text{Objects with Photometry } \left(\text{Euclid VIS/NISP}\right) \gg \text{Objects with Spectroscopy } \left(\text{DESI}\right)
+  \label{eq:asimetria_datos}
+\end{equation}
+
+This difference in data volume creates an asymmetry. If we limit ourselves to analyzing only the sources that have both modalities simultaneously, we discard $99\%$ of the deep photometric sample. To overcome this asymmetry, it is indispensable to turn to computational architectures capable of performing \textbf{cross-modal knowledge transfer}. By jointly aligning the latent representations of images and spectra over the high-quality overlapping sample, the foundational model learns to project spectroscopic physics (chemical abundances, gas kinematics, star formation history) directly onto the domain of photometric images, enriching scientific estimates in the massive photometric sample that lacks reference spectroscopy.
+
+
+\subsection{The Relevance of Self-Supervised Learning (SSL)}
+
+\subsubsection{Supervised Learning vs. Self-Supervised Learning} \label{sec:in:versus}
+
+The primary methodological difference between classical supervised learning and \textit{\gls{SSL}} lies in how the model optimization signal is formulated:
+
+\begin{itemize}
+  \item \textbf{Supervised Learning:} Requires each observational input $x$ (e.g., a \textit{Euclid} image) to be associated with a label or physical property $y$ determined externally by humans or by parametric models (e.g., manual morphological classification from \textit{Galaxy Zoo} or analytically calculated redshifts). This paradigm suffers from critical scalability limitations due to the slowness of manual labeling and the systematic biases of human classifiers.
+  
+  \item \textbf{Self-Supervised Learning:} Eliminates the requirement for external labels. The model is optimized by solving predictive tasks structured from the raw input data $x$ itself (e.g., reconstructing masked image patches, predicting spectral flux conditioned on morphological context, or aligning cross-modal vector representations). By not depending on human labeling efforts, \textit{\gls{SSL}} allows leveraging the entirety of pure observations of the universe collected by modern cosmological surveys, paving the way for the use of unlabeled petabyte-scale catalogs.
+\end{itemize}
+
+This transition is fundamental in the era of astrophysical Big Data. Since less than $1\%$ of the billions of objects detected by \textit{Euclid} or the \textit{Rubin Observatory} will have high-fidelity labels, training purely supervised models on small and incomplete samples propagates systematic biases and limits the model's generalization capacity when faced with atypical or rare galaxy populations. Self-supervised learning represents the only viable path to construct objective, human-bias-free, and scalable latent representations over the total volume of the observable universe \autocites{ar:huertas-company-lanusse-2023}{ar:hayat-2021}{ar:sarmiento-2021}.
+
+\subsubsection{Mathematical Advantage and Scaling Laws of SSL}
+
+Self-supervised learning stands out due to two mathematical foundations that overcome the limits of the supervised paradigm:
+
+\paragraph{A. Mitigation of Label Noise and Human Bias}
+
+Manually assigned or approximately analytically estimated labels inevitably contain label noise $\epsilon$, such that the observed variable is:
+
+\begin{equation}
+  y = y^* + \epsilon
+  \label{eq:ruido_etiqueta}
+\end{equation}
+
+where $y^*$ is the underlying physical reality. When training a supervised neural network by minimizing the mean squared error, the optimizer approximates a parameter configuration $\theta^*_{\text{supervised}}$ biased by the noise:
+
+\begin{equation}
+  \theta^*_{\text{supervised}} = \arg\min_{\theta} \mathbb{E} \left[ \| f\left(x; \theta\right) - \left(y^* + \epsilon\right) \|^2 \right]
+  \label{eq:opt_supervisada}
+\end{equation}
+
+This noise and imperfections in labeling limit model accuracy and propagate instrumental systematics. Conversely, \textit{\gls{SSL}} optimizes the network directly on the raw physical observations $x$ recorded by the detectors. The loss function (such as cross-entropy loss in autoregressive tasks or pixel \textit{\gls{MAE}} reconstruction) is calculated objectively on the observational brightness fluxes, bypassing subjective human noise:
+
+\begin{equation}
+  \theta^*_{\text{SSL}} = \arg\min_{\theta} \mathbb{E} \left[ -\log P\left(x_t \mid x_{<t}; \theta\right) \right]
+  \label{eq:opt_ssl}
+\end{equation}
+
+This forces the model to organize its latent space by adapting to the actual covariance structure of the physical universe.
+
+\paragraph{B. Overcoming the Performance Plateau through Scaling Laws}
+
+In transformer-based architectures, the validation cross-entropy loss $\mathcal{L}$ decreases following a power law as the pretraining data volume $D$ increases \autocite{ar:kaplan-2020}:
+
+\begin{equation}
+  \mathcal{L}\left(D\right) \propto D^{-\alpha_D}
+  \label{eq:ley_escala_datos}
+\end{equation}
+
+where $\alpha_D$ is the data scaling exponent.
+
+Classical supervised models quickly reach a performance plateau because the size of annotated catalogs $D_{\text{labeled}}$ is small. Attempting to increase model parameters $N$ on a stagnant dataset $D_{\text{labeled}}$ leads to overfitting. Since \textit{\gls{SSL}} does not require annotations, it can process the entire set of unlabeled observations $D_{\text{unlabelled}}$ (such as the billion sources of \textit{Euclid}). This massive volume allows for continuous descent along the power-law curve, improving generalization.
+
+As the model is trained in this large-scale regime, its latent representation space self-organizes fine morphological and spectral features (such as gravitational interactions, stellar kinematics, and heavy metal abundances in faint galaxies) that would be lost when projecting information onto the discrete classes of classical supervised learning.

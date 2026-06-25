@@ -1,0 +1,93 @@
+%---------------------------------------------------------%
+% AUTOMATIC STANDALONE WRAPPER
+%---------------------------------------------------------%
+\newif\ifstandalone
+\unless\ifdefined\university
+  \standalonetrue
+\else
+  \standalonefalse
+\fi
+
+\ifstandalone
+  \documentclass[11pt,a4paper]{article}
+  \usepackage[utf8]{inputenc}
+  \providecommand{\coverfont}{\fontfamily{pag}\selectfont}
+  \usepackage{geometry}
+  \usepackage{graphicx}
+  \usepackage{xcolor}
+  \usepackage{subcaption}
+  \usepackage{float}
+  \geometry{a4paper, margin=2.5cm}
+  \definecolor{primarycolor}{HTML}{000000}
+  \definecolor{headingcolor}{HTML}{000000}
+  \definecolor{tablerowcolor}{HTML}{F2F2F2}
+  %===========================================================%
+  % WARNING: If using the main template, DO NOT edit these
+  % variables here. Modify them in configuration/metadata.tex.
+  % Only edit these if compiling this cover page standalone.
+  %===========================================================%
+  \newcommand{\university}{UNIVERSITY OF EXCELLENCE}
+  \newcommand{\faculty}{Faculty of Science and Technology}
+  \newcommand{\institution}{Department of Physics and Astronomy}
+  \newcommand{\degree}{Master's Degree in Astrophysics}
+  \newcommand{\worktype}{Master's Thesis}
+  \newcommand{\titleThesis}{Foundation Models for Astronomy}
+  \newcommand{\subtitleThesis}{Developing a multimodal foundation model for Astronomy}
+  \newcommand{\authorThesis}{Firstname Lastname}
+  \newcommand{\supervisors}{Dr. Supervisor Firstname Lastname \\ Dr. Co-Supervisor Firstname Lastname}
+  \newcommand{\dateThesis}{July 2026}
+  \newcommand{\logoUniversity}{../figures/logo_university.png}
+  \newcommand{\logoInstitution}{../figures/logo_department.png}
+  \begin{document}
+\fi
+
+\providecommand{\coverfont}{\fontfamily{ptm}\selectfont}
+
+\begin{titlepage}
+	{
+		\coverfont
+		\centering
+		\vspace*{0.5cm}
+		{\LARGE\scshape\textbf{\university}\par}
+		\vspace*{0.5cm}
+		{\Large\scshape{\faculty}\par}
+		\vspace*{1.0cm}
+		{\LARGE\scshape\textbf{\institution}\par}
+		\vspace*{0.3cm}
+		{\Large\textbf{\degree}\par}
+		\vspace*{1.0cm}
+		{\Large\scshape\textbf{\worktype}\par}
+		
+		\vspace*{1.0cm}
+		{\Huge\textbf{\titleThesis}\par}
+		{\large\textit{\subtitleThesis}\par}
+		
+		\vspace*{1.5cm}
+		{\LARGE\textbf{\authorThesis}\par}
+		\vspace*{1.0cm}
+		{\large{Supervised by:}\par}
+		\vspace*{0.1cm}
+		{\Large{\supervisors}\par}
+		\vspace*{1.0cm}
+		{\Large\textbf{\dateThesis}\par}
+	}
+	
+		\noindent
+		\begin{minipage}[t]{0.49\linewidth}
+			\centering
+			\includegraphics[width=1\textwidth]{\logoUniversity}
+		\end{minipage}
+		\hfill
+		\begin{minipage}[t]{0.49\linewidth}
+			\centering
+			\includegraphics[width=0.60\textwidth]{\logoInstitution}
+		\end{minipage}		
+	
+\end{titlepage}
+\ifstandalone
+  \let\next\enddocument
+\else
+  \newpage\null\thispagestyle{empty}\newpage
+  \let\next\relax
+\fi
+\next
