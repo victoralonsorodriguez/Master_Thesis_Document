@@ -6,14 +6,7 @@
 \input{MasThesis_Document_Preamble}
 
 %------------ SELECTIVE COMPILATION ------------%
-\includeonly{
-	sections/02_Introduction.tex,
-	sections/03_Theoretical_Background.tex,
-	sections/04_Data.tex,
-	sections/05_Development.tex,
-	sections/06_Results.tex,
-	sections/07_Conclusions.tex
-}
+%\includeonly{}
 
 %---------------------------------------------------------%
 % BODY DOCUMENT
@@ -21,28 +14,37 @@
 \begin{document}
 	
 	%------------ FRONT MATTER ------------%
-	\frontpage[1]                                   
+	\frontpage[15]                                   
 	\thesisquotepage                                
 	\thesisindex                                    
 	\thesisacknowledgments                          
 	\thesisabstract                                 
 	
 	%------------ DOCUMENT UTILITIES ------------%
-	\linenumbers                                  
+	%\linenumbers                                  
+	\setbool{sectionpagebreak}{false} 
 	
 	%------------ MAIN CONTENT ------------%
-	\include{sections/02_Introduction.tex}           
-	\include{sections/03_Theoretical_Background.tex}                  
-	\include{sections/04_Data.tex}            
-	\include{sections/05_Development.tex}
-	\include{sections/06_Results.tex}
-	\include{sections/07_Conclusions.tex}
+	
+	\smartinclude{sections/02_Introduction.tex}           
+	\smartinclude{sections/03_Theoretical_Background.tex}                       
+	\smartinclude{sections/04_Data.tex}            
+	\smartinclude{sections/05_Development.tex}
+	\smartinclude{sections/06_Results.tex}
+	\smartinclude{sections/07_Conclusions.tex}
 	
 	%------------ BIBLIOGRAPHY ------------%
 	\thesisbibliography                             
 	
+	
+	%------------ APPENDICES ------------%
+	\thesisappendices{
+		\smartinclude{sections/Appendix_A.tex}
+		\smartinclude{sections/Appendix_C.tex}
+		\smartinclude{sections/Appendix_D.tex}
+	}
+	
 \end{document}
-
 
 
 

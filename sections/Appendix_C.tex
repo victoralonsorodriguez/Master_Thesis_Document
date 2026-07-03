@@ -1,0 +1,109 @@
+% !TeX spellcheck = en_US
+
+\section{Spectral Synthesis Using LDM} \label{sec:ap:diff}
+
+This appendix details the methodological framework, intuitive foundation, and results of probabilistic spectral generation and synthesis experiments conditioned on the image modality. The goal is to evaluate whether the latent space of \textit{AstroPT MM} retains a stable bidirectional generative physical correspondence, such that the model is capable of recreating a complete high-resolution continuous \textit{\gls{DESI}} spectrum from only the visual information of a \textit{Euclid} cutout.
+
+\subsection{Use of the Latent Space}
+
+Generating complex high-dimensional data, such as a real \textit{DESI} spectrum consisting of $N_{\text{wave}} = 7781$ flux points at different wavelengths, is an extremely expensive task and prone to introducing unphysical noise if attempted directly in physical space. To resolve this, we draw inspiration from the design of commercial \textit{\glspl{LDM}}, whose primary exemplar is \textit{Stable Diffusion} \autocite{ar:rombach-2022}. In the original \textit{Stable Diffusion} model, instead of diffusing noise over the millions of pixels of an image, the diffusion process is performed in a lower-dimensional latent space encoded by an autoencoder. This process is guided by a text conditional vector using cross-attention. In this work, we adapt this same philosophy to the astrophysical domain:
+
+\begin{itemize}
+	\item The \textit{AstroPT MM} encoder was used as our data ``compressor''. This encoder takes the complex 7781-point spectrum and condenses it into a spectral latent vector $\mathbf{z}_s \in \mathbb{R}^{d_\text{s}}$ of only $d_\text{s} = 768$ dimensions, which preserves the essential physical features.
+
+	\item The diffusion model was trained to learn to generate this 768-dimensional spectral latent vector ($\mathbf{z}_s$), jointly conditioned on the morphological feature vector of the \textit{Euclid} image ($\mathbf{z}_i \in \mathbb{R}^{d_\text{s}}$) and the redshift ($z$) of the object. The inclusion of redshift is critical in this workflow because the dataset interpolated in observed wavelength is being used, \cref{sec:dev:inter}; without this control variable, the model would lack the necessary physical reference to place the spectral peaks and breaks in their correct relative positions.
+
+	\item Once the proxy latent vector is generated, the pretrained spectral decoder ($\mathcal{D}_{\text{spec}}$) of \textit{AstroPT MM} projects this vector back to the physical space of 7781 wavelengths.
+\end{itemize}
+
+
+\subsection{Diffusion Process}
+
+The generative flow of the model is structured in three conceptual stages:
+
+\subsubsection{Destructive Forward Process}
+This consists of a controlled destructive process. Starting from a real spectral latent vector, $\mathbf{z}_0$, small amounts of Gaussian noise are progressively added over $T = 1000$ time steps. In the final step $t = 1000$, the original physical information is completely destroyed, becoming pure Gaussian white noise.
+
+Mathematically, the transition between one step and the next is defined as:
+
+\begin{equation}
+q(\mathbf{z}_t | \mathbf{z}_{t-1}) = \mathcal{N}\left(\mathbf{z}_t; \sqrt{1 - \beta_t} \mathbf{z}_{t-1}, \beta_t \mathbf{I}\right)
+\label{eq:ap_forward}
+\end{equation}
+
+where $\beta_t \in (0, 1)$ is a scheduled coefficient defining how much information is destroyed at step $t$, and $\mathbf{I}$ is the identity matrix. Thanks to the properties of Gaussians, we can calculate the latent vector at any intermediate step $t$ directly from the original vector $\mathbf{z}_0$ without computing all previous steps:
+
+\begin{equation}
+q(\mathbf{z}_t | \mathbf{z}_0) = \mathcal{N}\left(\mathbf{z}_t; \sqrt{\bar{\alpha}_t} \mathbf{z}_0, (1 - \bar{\alpha}_t) \mathbf{I}\right)
+\label{eq:ap_forward_direct}
+\end{equation}
+
+where $\alpha_t = 1 - \beta_t$ and $\bar{\alpha}_t = \prod_{s=1}^t \alpha_s$.
+
+\subsubsection{Reverse Generation Process}
+
+The goal is to reconstruct the information starting from random noise. To do this, a neural network (a U-Net architecture modified for 1D vectors) with parameters $\theta$ is trained. The function of this network is to look at the noisy vector $\mathbf{z}_t$ at step $t$ and predict exactly what amount of noise $\boldsymbol{\epsilon}_\theta$ was added to it at that step.
+
+To ensure the generation is not random, but corresponds to the galaxy observed at a given redshift, we condition the U-Net prediction by jointly injecting the Euclid image latent vector ($\mathbf{z}_i$) and the redshift ($z$) into the network bottleneck using cross-attention mechanisms, analogously to how \textit{Stable Diffusion} is conditioned by text. The network is optimized by minimizing the difference between the real noise $\boldsymbol{\epsilon}$ and the predicted noise $\boldsymbol{\epsilon}_\theta$:
+\begin{equation}
+\mathcal{L}_{\text{LDM}} = \mathbb{E}_{\mathbf{z}_0, \boldsymbol{\epsilon}, t, \mathbf{z}_i, z} \left[ \|\boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{z}_i, z)\|^2 \right]
+\label{eq:ap_ldm_loss}
+\end{equation}
+
+\subsubsection{Sampling and Inference}
+To synthesize the continuous spectrum of an external galaxy for which only its image cutout $I$ is available, we implement the following sequential inference workflow:
+\begin{enumerate}
+	\item \textbf{Visual embedding extraction:} The image latent vector is extracted, $\mathbf{z}_i = f_{\text{img}}(I) \in \mathbb{R}^{d_\text{s}}$, using the \textit{AstroPT MM} encoder.
+
+	\item \textbf{Redshift prediction:} Since the diffusion model has been trained using physical variables interpolated in the observer's rest frame, the redshift must be known. To do this, the visual latent vector $\mathbf{z}_i$ is first passed through the \textit{\gls{MLP}} head trained to estimate the spectroscopic redshift from the different modalities:
+	\begin{equation}
+	\hat{z} = \text{MLP}_{\text{redshift}}(\mathbf{z}_i)
+	\label{eq:ap_z_pred}
+	\end{equation}
+
+	The results yielded by each modality are weighted based on their precision, and this is taken as the redshift of the object to be generated.
+
+	\item \textbf{Noise initialization:} An initial pure Gaussian noise vector is generated in latent space: $\mathbf{z}_T \sim \mathcal{N}(0, \mathbf{I}) \in \mathbb{R}^{d_\text{s}}$.
+
+	\item \textbf{Conditioned reverse diffusion:} The trained U-Net is activated to iteratively subtract noise step by step starting from $\mathbf{z}_T$, using the accelerated DDIM algorithm \autocite{ar:song-2020} with 50 inference steps instead of 1000. The steps are guided at all times by the conditional pair $(\mathbf{z}_i, \hat{z})$, until a clean synthesized spectral latent vector $\mathbf{z}_0^{\text{gen}} \in \mathbb{R}^{d_\text{s}}$ is obtained.
+
+	\item \textbf{Decoding to physical domain:} The decoded latent vector is projected back to the physical wavelength space using the pretrained spectral decoder of \textit{AstroPT MM}:
+	\begin{equation}
+	\text{Synthetic Spectrum} = \mathcal{D}_{\text{spec}}(\mathbf{z}_0^{\text{gen}}) \in \mathbb{R}^{7781}
+	\label{eq:ap_spec_decode}
+	\end{equation}
+\end{enumerate}
+
+
+\subsection{Generated Results}
+
+To validate the performance and consistency of the latent diffusion model, \cref{fi:ap:diff} shows a qualitative comparison between the original DESI spectrum and the synthetic reconstructions obtained from the corresponding Euclid image cutout.
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[b]{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{ID_39633476848190817_dashboard}
+		\caption{}
+		\label{fi:ap:dif_good}
+	\end{subfigure}
+	\caption[Conditioned spectral synthesis using a latent diffusion model]{(Part 1) Qualitative comparison between the original \textit{\gls{DESI}} spectrum and synthetic spectra.}
+	\label{fi:ap:diff}
+\end{figure}
+
+\begin{figure}[H]
+	\ContinuedFloat
+	\centering
+	\begin{subfigure}[b]{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{ID_39633427955191599_dashboard}
+		\caption{}
+		\label{fi:ap:dif_bad}
+	\end{subfigure}
+	\caption[]{(Continued) Qualitative comparison between the original  \textit{\gls{DESI}} spectrum (in black) and three synthetic spectra generated from the \textit{Euclid} image embeddings and the predicted redshift using the latent diffusion model. The three synthetic spectra (represented in different colors) correspond to three initializations of the reverse sampling process with different pseudorandom seeds, illustrating the physical uncertainty and variability in the estimation of emission lines and the continuum slope. The spectral lines are positioned according to the predicted redshift.}
+\end{figure}
+
+The original spectrum (represented in black) is used to verify the physical accuracy of the synthesis, although its availability is strictly restricted to those sources belonging to the data catalog available in this project. Since the reverse diffusion process is probabilistic in nature, the generation is executed by initializing the sampling process with three different pseudorandom seeds to obtain three independent spectral realizations (represented in different colors). This multiplicity of seeds allows evaluating the physical variance or intrinsic uncertainty of the synthesis on the shape of the continuum and the relative intensity of the emission lines, confirming that the model performs a consistent sampling of the posterior conditional probability density of the astrophysical manifold.
+
+In \cref{fi:ap:dif_good}, it can be seen that in the ranges $6500$--$7000\,\text{\AA{}}$ and $8000$--$9000\,\text{\AA{}}$ the generated lines resemble the original spectrum. The discrepancy in positions is due to the difference between the real redshift $0.3367$ and the predicted one $0.2626$. However, for the object in \cref{fi:ap:dif_bad}, the results are not satisfactory. This demonstrates that, although it is a promising method for generating synthetic spectra, it is still necessary to refine both the \textit{AstroPT MM} model from which the generative training departs and the \textit{\gls{LDM}} itself. This is therefore left as a future project to be pursued.

@@ -1,0 +1,25 @@
+% !TeX spellcheck = en_US
+
+\section{Visual and Spectral Latent Spaces} \label{sec:ap:umap}
+
+This appendix complements the analysis of the internal representations of \textit{AstroPT MM} by providing a direct qualitative inspection of the \textit{\gls{UMAP}} projections for the visual and spectral modalities. Unlike conventional two-dimensional representations that use points colored according to physical properties, such as those detailed in \cref{fi: UMAP}, the maps presented here substitute each point with the real \textit{Euclid} image or the real \textit{\gls{DESI}} spectrum of the corresponding galaxy. This technique allows direct visual validation of how the model self-organizes the representation space based on the morphology and physics of the sources.
+
+\begin{figure}[hb]
+	\centering
+	\includegraphics[width=\textwidth]{umap_EuclidImage_pooled_visual_crop}
+	\caption[UMAP projection of the visual latent space showing Euclid images]{Direct visualization of the visual latent space via a \textit{\gls{UMAP}} projection in which the points have been replaced by the real VIS/NISP band images from \textit{Euclid}. A decomposition into discrete islands based on object morphology and size is apparent, with galaxies exhibiting the largest effective radii ($R_{\text{eff}}$) concentrated in the cluster located at the far right.}
+	\label{fi:ap:UMAP_vis}
+\end{figure}
+
+
+In the visual latent space map, \cref{fi:ap:UMAP_vis}, a clear decomposition of the projection into discrete, independent ``islands'' is observed. This fragmented topology demonstrates that the visual encoder classifies galaxies into differentiated morphological categories, grouping objects with homogeneous characteristics within each structure. In particular, the island located at the far right of the projection clusters galaxies with the largest effective radius ($R_{\text{Sersic}}$), as predicted from the continuous distribution in \cref{fi: UMAP}. The progression toward the right clearly displays the transition toward more extended, larger apparent-size systems.
+
+On the other hand, the spectral latent space map, \cref{fi:ap:UMAP_spec}, reveals a continuous crescent-shaped structure. By centering the individual spectra of each object on the neighborhood of the $\text{H}_\alpha$ emission line, the smooth spectro-physical gradient encoded along the projection can be qualitatively appreciated. The profiles gradually evolve in intensity and shape from spectra with strong emission (typical of star-forming galaxies) to purely passive profiles in the extreme regions. This visual gradient directly validates the continuous transitions in redshift ($z$) and emission line flux analyzed in \cref{fi: UMAP}.
+
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\textwidth]{umap_DESISpectrum_pooled_spectral_crop}
+	\caption[UMAP projection of the spectral latent space showing DESI spectra]{Direct visualization of the spectral latent space via a \textit{\gls{UMAP}} projection in which the real \textit{\gls{DESI}} spectra are shown centered on the $\text{H}_\alpha$ emission line. The smooth continuous spectro-physical gradient and the evolution of the emission profiles and continuum along the crescent-shaped structure can be clearly observed.}
+	\label{fi:ap:UMAP_spec}
+\end{figure}

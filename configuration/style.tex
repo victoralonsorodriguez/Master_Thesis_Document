@@ -31,6 +31,18 @@
 	\renewcommand{\footrulewidth}{0.0pt} 
 }
 
+% Appendix page style
+\fancypagestyle{appendixpage}{
+	\fancyhf{} 
+	\fancyhead[R]{\nouppercase{\rightmark}}
+	\fancyhead[L]{\nouppercase{Appendix \leftmark}}
+	\fancyfoot[L]{\worktype}
+	\fancyfoot[C]{\thepage}
+	\fancyfoot[R]{\authorThesis}
+	\renewcommand{\headrulewidth}{0.2pt} 
+	\renewcommand{\footrulewidth}{0.0pt} 
+}
+
 % Abstract and bibliography page style
 \fancypagestyle{abastractpage}{
 	\fancyhf{}

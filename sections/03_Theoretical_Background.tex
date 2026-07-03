@@ -2,7 +2,7 @@
 
 \section{Theoretical Background}
 
-This chapter establishes the theoretical, physical, and methodological foundations that underpin the development of this master's thesis. The intersection between observational astrophysics and advanced deep learning demands a rigorous formal framework. To this end, the chapter is structured into five main sections. \cref{sec:tb:context} presents the astrophysical context of multi-wavelength observations, justifying the physical synergy between photometry and spectroscopy and describing the spatial discretization and data flow schemes. \cref{sec:tb:MFM} defines the architecture and universal \textit{tokenization} of foundational models in astrophysics, as well as the different self-supervised learning mechanisms. \cref{sec:tb:math} mathematically develops the mechanisms and loss functions associated with these sequential architectures (self-attention, causality, loss functions, and optimization algorithms). Finally, \cref{sec:tb:emb} delves into embedding spaces and the latent manifold hypothesis, exploring how geometric self-organization correlates with physical properties and analyzing the Platonic representation hypothesis of the universe.
+This section establishes the theoretical, physical, and methodological foundations underpinning the development of this master's thesis. The intersection of observational astrophysics and advanced deep learning demands a rigorous formal framework. To this end, the section is structured into four main sections: \cref{sec:tb:context} presents the astrophysical context of multi-wavelength observations, justifying the physical synergy between photometry and spectroscopy and describing the spatial discretization and data flow schemes; \cref{sec:tb:MFM} defines the architecture and universal tokenization of foundation models in astrophysics, as well as the different self-supervised learning mechanisms; \cref{sec:tb:math} develops the mathematical formalism of the mechanisms and loss functions associated with these sequential architectures (self-attention, causality, loss functions, and optimization algorithms). Finally, \cref{sec:tb:emb} elaborates on embedding spaces and the latent manifold hypothesis, exploring how geometric self-organization correlates with physical properties and analyzing the platonic representation hypothesis of the universe.
 
 \subsection{Astrophysical Context of Multi-Wavelength Observations} \label{sec:tb:context}
 
@@ -11,33 +11,33 @@ This chapter establishes the theoretical, physical, and methodological foundatio
 The electromagnetic radiation emitted by a galaxy is a complex superposition of physical processes occurring at different scales. The observed spectrum of a galaxy contains contributions from:
 
 \begin{enumerate}
-\item \textbf{The stellar continuum:} Emitted by the photospheres of billions of stars of different spectral types. The stellar effective temperature ($T_{\text{eff}}$) dictates the emission maximum according to Wien's displacement law, mathematically formulated as $\lambda_{\text{max}} T_{\text{eff}} = b$, where $b \approx 2.8977 \times 10^7\,\text{\AA{} K}$ is Wien's displacement constant \autocite{ar:wien-1894}. Thus, young massive stars (O, B, A types) dominate ultraviolet and blue emission, whereas evolved low-mass stars (red giants, K, M types) dominate emission in the red optical and near-infrared. The former constitute the so-called Population I stellar populations, while the latter belong to Population II. Modeling this continuum and stellar population synthesis are fundamental to reconstructing the evolutionary history and stellar mass of galaxies \autocites{ar:bruzual-charlot}{ar:conroy-2013}.
+\item \textbf{The stellar continuum:} Emitted by the photospheres of billions of stars of different spectral types. The effective stellar temperature ($T_{\text{eff}}$) dictates the emission peak according to Wien's displacement law, mathematically expressed as $\lambda_{\text{max}} T_{\text{eff}} = b$, where $b \approx 2.8977 \times 10^7\,\text{\AA{} K}$ is the Wien displacement constant \autocite{ar:wien-1894}. Consequently, young massive stars (O, B, A types) dominate the ultraviolet and blue emission, while evolved low-mass stars (red giants, K and M types) dominate the red optical and near-infrared emission. The former constitute the so-called Type I stellar populations, while the latter belong to Type II. Modeling this continuum and performing stellar population synthesis are fundamental for reconstructing the evolutionary history and stellar mass of galaxies \autocites{ar:bruzual-charlot}{ar:conroy-2013}.
 
-\item \textbf{Processes in the interstellar medium:} Interstellar gas ionized by ultraviolet (UV) photons from young stars emits hydrogen recombination lines (such as $\text{H}\alpha$ at $6563\,\text{\AA{}}$ or $\text{H}\beta$ at $4861\,\text{\AA{}}$) and collisionally excited forbidden transition lines (such as the $\left[\text{O\,II}\right]\,\lambda\lambda 3726, 3729\,\text{\AA{}}$ doublet or $\left[\text{O\,III}\right]\,\lambda 5007\,\text{\AA{}}$). The presence and flux ratios of these lines provide direct estimates of the instantaneous star formation rate, the ionization state of the gas, and the gas-phase metallicity.
+\item \textbf{Interstellar medium processes:} Interstellar gas ionized by ultraviolet photons from young stars emits hydrogen recombination lines (such as $\text{H}\alpha$ at $6563\,\text{\AA{}}$ or $\text{H}\beta$ at $4861\,\text{\AA{}}$) and collisionally excited forbidden transition lines (such as the $\left[\text{O\,II}\right]\,\lambda\lambda 3726, 3729\,\text{\AA{}}$ doublet or $\left[\text{O\,III}\right]\,\lambda 5007\,\text{\AA{}}$). The presence and flux ratios of these lines provide direct estimates of the instantaneous star formation rate, the ionization state of the gas, and the gas-phase metallicity.
 
-\item \textbf{Dust attenuation:} Interstellar dust grains efficiently absorb radiation in the ultraviolet and optical (particularly at short wavelengths), scattering and thermally re-emitting it in the mid- and far-infrared. This significantly alters the observed spectral profile and gives rise to complex degeneracies in reconstructing the intrinsic properties of galaxies \autocites{ar:cardelli-1989}{ar:calzetti-2000}.
+\item \textbf{Dust attenuation:} Interstellar dust grains efficiently absorb radiation in the ultraviolet and optical (particularly at short wavelengths), scattering it and re-emitting it thermally in the mid- and far-infrared. This significantly alters the observed spectral profile and gives rise to complex degeneracies in the reconstruction of the intrinsic properties of galaxies \autocites{ar:cardelli-1989}{ar:calzetti-2000}.
 \end{enumerate}
 
 \subsubsection{Spatial-Spectral Synergy}
 
-Wide-field multiband photometry gathers integrated fluxes through broadband filters (such as the $ugrizy$ filter system) or the VIS (visible optical channel) and NISP (infrared photometry and spectroscopy in the $Y$, $J$, and $H$ bands) instruments of the \textit{Euclid} space mission \autocites{ar:mellier-2024}{ar:cropper-2024}{ar:jahnke-2025}. Although it enables the efficient cataloging of billions of sources, the low spectral resolution of photometry introduces severe degeneracies in color space. For example, a galaxy may exhibit reddish colors due to either an old and passive stellar population (aging) or an active star formation rate heavily obscured by interstellar dust (dust reddening)—a classic degeneracy in observational astrophysics that hinders unambiguous stellar characterization \autocites{ar:worthey-1994}{ar:conroy-2013}.
+Wide-field multi-band photometry collects integrated fluxes through broadband filters (such as the $ugrizy$ filter system) or the VIS (visible optical channel) and NISP (near-infrared photometry and spectroscopy in the $Y$, $J$, and $H$ bands) instruments of the \textit{Euclid} space mission \autocites{ar:mellier-2024}{ar:cropper-2024}{ar:jahnke-2025}. Although it enables efficient cataloging of billions of sources, the low spectral resolution of photometry introduces severe degeneracies in color space. For example, a galaxy may exhibit red colors due to an old and passive stellar population (aging) or due to an active star formation rate heavily obscured by interstellar dust (dust reddening), a classical degeneracy in observational astrophysics that complicates unambiguous stellar characterization \autocites{ar:worthey-1994}{ar:conroy-2013}.
 
-Spectroscopy resolves these degeneracies by dispersing light with high spectral resolution ($R = \lambda/\Delta\lambda \sim 2000 - 5000$). This allows identification of the age of stellar populations using specific spectral features, such as the 4000 $\si{\angstrom}$ break (the $D_n\left(4000\right)$ index), defined as the ratio of average flux between two contiguous narrow bands:
+Spectroscopy resolves these degeneracies by dispersing light at high spectral resolution ($R = \lambda/\Delta\lambda \sim 2000 - 5000$). This allows the age of stellar populations to be identified through specific spectral discontinuities, such as the $4000\,\si{\angstrom}$ break (the $D_n\left(4000\right)$ index), defined as the flux ratio between two adjacent narrow bands:
 
 \begin{equation}
 D_n 4000 = \dfrac{\int_{4000}^{4100} F_{\nu}\left(\lambda\right) d\lambda}{\int_{3850}^{3950} F_{\nu}\left(\lambda\right) d\lambda}
 \label{eq:dn4000}
 \end{equation}
 
-Furthermore, the spectrum enables the measurement of the spectroscopic redshift ($z_{\text{spec}}$) with high precision (with a typical resolution of $\sigma_z \approx 0.0005$ in modern spectroscopic catalogs; see \textcite{ar:desi-early-release}) from the shift of known atomic and molecular lines, eliminating the ambiguity that limits photometric redshift ($z_{\text{phot}}$) estimates based solely on broadband imaging. This photometric-spectroscopic coupling helps mitigate the degeneracy among age, metallicity, and dust reddening of stellar populations \autocites{ar:balogh-1999}{ar:desi-early-release}.
+The spectrum also enables the spectroscopic redshift ($z_{\text{spec}}$) to be measured with high precision, with a typical resolution of $\sigma_z \approx 0.0005$ in modern spectroscopic catalogs \autocite{ar:desi-early-release}, from the shift of known atomic and molecular lines, eliminating the ambiguity inherent in photometric redshift estimates ($z_{\text{phot}}$) based solely on broadband imaging. This photometric-spectroscopic coupling mitigates the degeneracy between stellar population age, metallicity, and dust reddening \autocites{ar:balogh-1999}{ar:desi-early-release}.
 
-However, spectroscopic observations are affected by instrumental aperture effects. Surveys such as \textit{\gls{DESI}} obtain spectra using optical fibers with a physical angular diameter on the sky of $1.5''$ \autocite{ar:desi-early-release}. At an intermediate redshift of $z \sim 0.5$, a $1.5''$ aperture covers only the central $10\,\text{kpc}$ of the galaxy. Therefore, the observed spectrum is biased toward the physics of the central region or galactic bulge, ignoring the star formation activity and metallicity gradient of the peripheral spiral arms. By training a model that simultaneously processes the spatially resolved morphology from \textit{Euclid} and the fiber spectrum from \textit{\gls{DESI}}, a cross-modal channel is established that compensates for aperture bias and reconstructs the global stellar structure and evolution of the astronomical object in a unified manner.
+However, spectroscopic observations are affected by instrumental aperture effects. Survey projects such as \textit{\gls{DESI}} obtain spectra using optical fibers with an angular diameter of $1.5''$ on sky \autocite{ar:desi-early-release}. At an intermediate redshift of $z \sim 0.5$, a $1.5''$ aperture covers only the central $10\,\text{kpc}$ of the galaxy. The observed spectrum is therefore biased toward the physics of the central region or galactic bulge, missing the star formation activity and metallicity gradient in the peripheral spiral arms. Training a model that simultaneously processes the spatially resolved morphology of \textit{Euclid} and the fiber spectrum of \textit{\gls{DESI}} establishes an intermodal channel that compensates for this aperture bias and provides a unified reconstruction of the global stellar structure and evolution of the astronomical object.
 
-This spatial-spectral synergy is essential for studying complex, compact, short-lived phenomena, such as dual \textit{\gls{AGN}}s. Identifying and confirming these systems requires the combination of sub-arcsecond spatial imaging to physically separate the two merging galactic nuclei, optical morphology from \textit{Euclid}, and high-resolution spectroscopy to measure gas kinematics and confirm the independent redshift ($z$) of both nuclei, \textit{\gls{DESI}} spectra. Spatial resolution alone or the integrated spectrum separately is not sufficient to distinguish between a genuine dual \textit{\gls{AGN}} and a galaxy with irregular or clumpy morphology. The development of these surveys and their computational analysis using machine learning has been key to cataloging these candidates and studying the coevolution of galaxies and supermassive black holes in the universe \autocites{ar:ulivi-2025}{ar:mezcua-2026}.
+This spatial-spectral synergy is fundamental for the study of complex, compact, and short-lived phenomena such as \textit{dual \glspl{AGN}}, \cref{sec:ap:sim}. Identifying and confirming these systems requires combining sub-arcsecond spatial imaging to physically separate the two galactic nuclei undergoing a merger (\textit{Euclid} optical morphology) with high-resolution spectroscopy to measure the gas kinematics and independently confirm the redshift ($z$) of both nuclei (\textit{\gls{DESI}} spectra). Spatial resolution alone or the integrated spectrum in isolation are insufficient to distinguish a genuine \textit{dual \gls{AGN}} from a galaxy with irregular or clumpy morphology. The development of these surveys and their computational analysis using machine learning has been key to cataloging these candidates and studying the co-evolution of galaxies and supermassive black holes in the universe \autocites{ar:ulivi-2025}{ar:mezcua-2026}.
 
 \subsubsection{Flux Scaling}
 
-At the image pixel level, the dynamic range of astronomical flux is conditioned using the asinh (hyperbolic arcsine) transformation developed by \textcite{ar:lupton-1999} to preserve noise linearity in faint fluxes and prevent logarithmic saturation in bright fluxes:
+At the image pixel level, the dynamic range of astronomical flux is conditioned using the $\text{asinh}$ (inverse hyperbolic sine) transformation developed by \textcite{ar:lupton-1999} to preserve noise linearity at faint fluxes and prevent logarithmic saturation at bright fluxes:
 
 \begin{equation}
 y_i = \text{asinh}\left(\dfrac{x_i - \text{median}}{\beta}\right)
@@ -51,82 +51,78 @@ where $x_i$ is the raw flux measured by the detector, $\text{median}$ is the sub
 \label{eq:asinh_derivative}
 \end{equation}
 
-This derivative possesses optimal properties for training neural networks via backpropagation:
+This derivative has optimal properties for training neural networks via backpropagation:
 
 \begin{itemize}
-\item For low fluxes ($z \to 0$), the derivative tends to $1$, meaning that the gradient flows linearly without suffering from vanishing gradients, preserving the physics and statistical distribution of the sky background noise.
-\item For high fluxes ($z \gg 1$), the derivative decays as $1/z$, attenuating the impact of extremely bright \textit{\gls{AGN}}s or foreground stars, preventing gradient explosion during optimization.
+\item For low fluxes ($z \to 0$), the derivative approaches $1$, meaning the gradient flows linearly without suffering from vanishing gradient, preserving the physics and statistical distribution of the sky background noise.
+\item For high fluxes ($z \gg 1$), the derivative decays as $1/z$, attenuating the impact of extremely bright \textit{\glspl{AGN}} or foreground stars, thus preventing gradient explosion during optimization.
 \end{itemize}
 
-\subsection{Multimodal Foundational Models} \label{sec:tb:MFM}
+\subsection{Multimodal Foundation Models} \label{sec:tb:MFM}
 
-\subsubsection{Architecture of a Transformer Model} \label{sec:tb:arq}
+\subsubsection{Transformer Model Architecture} \label{sec:tb:arq}
 
-Modern multimodal foundational models are based on the \textit{Transformer} architecture \autocite{ar:attention}. A \textit{Transformer} is a deep artificial neural network consisting of sequentially stacked processing blocks. Each block is composed of two main sublayers: a global self-attention sublayer (which captures contextual dependencies) and a fully connected feed-forward network that maps representations to a higher-dimensional latent space before projecting them back. 
+Modern multimodal foundation models are based on the \textit{Transformer} architecture \autocite{ar:attention}. A \textit{Transformer} is a deep artificial neural network made up of sequentially stacked processing blocks. Each block consists of two main sublayers: a global self-attention sublayer, which captures contextual dependencies, and a fully connected feed-forward network that maps representations to a higher-dimensional latent space before projecting them back.
 
-To fully understand the architecture of a multimodal foundational model, it is essential to define the role of the encoding and decoding components:
+To fully understand the architecture of a multimodal foundation model, it is essential to define the role of the encoding and decoding components:
 
 \begin{itemize}
-	\item \textbf{Encoder:} Its main function is to extract signals from the raw astronomical data (pixel images or spectral fluxes) and compress this high-dimensional information into a set of latent vectors or features of lower physical dimension. For example, a typical input astronomical image in two-dimensional (2D) format of $224 \times 224$ pixels with multiple channels has a representation space of over $150,000$ variables, whereas the encoder compresses this input into a continuous and dense embedding vector of only $768$ dimensions.
-	\item \textbf{Decoder:} It is responsible for taking these compressed representations and mapping them back to reconstruct the original signal or project predictions toward new representations (such as reconstructing a spectrum from an image or predicting the flux of the next patch).
+	\item \textbf{Encoder:} Its primary function is to extract signals from raw astronomical data (pixel images or spectral fluxes) and compress this high-dimensional information into a set of latent vectors or features of lower physical dimensionality. For example, a typical astronomical input image in two-dimensional format of $224 \times 224$ pixels with multiple channels has a representation space of more than $150{,}000$ variables, whereas the encoder compresses this input into a continuous and dense embedding vector of only $d_{\text{emb}}=768$ dimensions.
+	\item \textbf{Decoder:} It takes these compressed representations and maps them back to reconstruct the original signal or project predictions into new representations (such as reconstructing a spectrum from an image or predicting the flux of the next patch).
 \end{itemize}
 
+The capacity and representativeness of \textit{\glspl{MFM}} lies in their \textbf{weights} ($W$), real numerical coefficients that parameterize the matrix operations of the network and are optimized during pretraining. As the number of weights (model parameters) increases, the network gains greater expressiveness and the ability to model complex nonlinear physical phenomena, at the cost of greater memory and computational demands. To prevent overfitting and optimize the massive computational resources required in \textit{\gls{HPC}} environments, the \textbf{Chinchilla scaling laws} \autocite{ar:hoffmann-2022} establish that for a given increase in computational budget (measured in \textit{\gls{FLOPS}}), the number of model parameters ($N$) and the number of pretraining data tokens ($D$) must be scaled in the same quantitative proportion to achieve optimal pretraining efficiency.
 
-The capability and expressiveness of \textit{\gls{MFM}}s lie in their \textbf{weights} ($W$), real numerical coefficients that parameterize the matrix operations of the network and are optimized during pretraining. With a larger volume of weights (model parameters), the network acquires greater expressiveness and capacity to model complex non-linear physical phenomena, at the expense of higher memory and computation time demands. To avoid overfitting and optimize the massive computational resources required in \textit{\gls{HPC}} environments, the \textbf{Chinchilla scaling laws} \autocite{ar:hoffmann-2022} establish that for a given increase in computational budget (measured in \textit{\gls{FLOPS}}), the number of model parameters ($N$) and the amount of pretraining data tokens ($D$) must be scaled in the same quantitative proportion to achieve optimal pretraining efficiency.
-
-
-It is important to highlight the difference between continuous and discrete tokenizers. Models such as \textit{AION-1} or architectures based on \textit{\gls{VQ-VAE}} \autocite{ar:vq-vae} rely on discrete tokenizers that quantize the latent space by mapping continuous vectors to integer numerical codes. These are defined within a predefined codebook using schemes like \textit{\gls{FSQ}} \autocite{ar:mentzer-2023} or \textit{\gls{LFQ}} \autocite{ar:yu-2023}. In these tokenizers, if the codebook has, for example, a finite size of 1024 values, each continuous input vector is mapped to the integer index ($0$ to $1023$) of the closest code in the codebook. This restricts the representation of the continuous physical signal of the sky to a finite set of integers. However, in our implementation of \textit{AstroPT}, we avoid the use of discrete tokenizers and work directly with continuous representations. This is because the stable and robust pretraining of discrete codebooks requires massive datasets that far exceed the size of our current dataset, see \cref{sec:dat}, making quantization unstable and unfeasible in our data regime. Therefore, we rely on a direct continuous mapping of the original signal to patches and, subsequently, to continuous vector representations (embeddings).
+It is important to highlight the distinction between continuous and discrete tokenizers. Models such as \textit{AION-1} or architectures based on \textit{\gls{VQ-VAE}} \autocite{ar:vq-vae} rely on discrete tokenizers that quantize the latent space by mapping continuous vectors to integer numerical codes. These are defined within a predefined codebook using schemes such as \textit{\gls{FSQ}} \autocite{ar:mentzer-2023} or \textit{\gls{LFQ}} \autocite{ar:yu-2023}. In these tokenizers, if the codebook has a finite size of, for example, 1024 values, each continuous input vector is mapped to the integer index ($0$ to $1023$) of the nearest code in the book. This restricts the representation of the continuous physical sky signal to a finite set of integers. However, in our \textit{AstroPT} implementation, we avoid the use of discrete tokenizers and work directly with continuous representations. This is because the stable and robust pretraining of discrete codebooks requires massive datasets that far exceed the size of our current dataset (see \cref{sec:dat}), making quantization unstable and unfeasible in our data regime. We therefore rely on a direct continuous mapping from the original signal to patches and, subsequently, to continuous vector representations (embeddings).
 
 \subsubsection{Autoregressive Learning}
 
-\textit{AstroPT} \autocite{ar:astropt} is inspired by temporal sequence and natural language modeling. The autoregressive approach addresses the simulation of galaxies by treating them as ordered sequences of patches. Mathematically, the model factorizes the joint probability of observing a sequence of spatial patches or spectral channels $X = \left(x_1, x_2, \dots, x_L\right)$ as the cumulative product of the causal conditional transition probabilities:
+\textit{AstroPT} \autocite{ar:astropt} is inspired by time-series and natural language sequence modeling. The autoregressive approach addresses galaxy simulation by treating galaxies as ordered sequences of patches. Mathematically, the model factorizes the joint probability of observing a sequence of spatial patches or spectral channels $X = \left(x_1, x_2, \dots, x_L\right)$ as the cumulative product of causal conditional transition probabilities:
 
 \begin{equation}
 P\left(X\right) = \prod_{i=1}^{L} P\left(x_i \mid x_{<i}\right) = \prod_{i=1}^{L} P\left(x_i \mid x_1, x_2, \dots, x_{i-1}\right)
 \label{eq:autoregressive_probability}
 \end{equation}
 
-Thus, the task reduces to sequentially estimating the probability of occurrence of each patch conditioned on its preceding context. This mathematical formulation dictates that the flux prediction of patch $x_i$ depends exclusively on the previous elements $x_{<i}$. For the model to optimize this distribution, it must deduce the physical laws implicit in the real astronomical data.
+The task thus reduces to sequentially estimating the probability of occurrence of each patch conditioned on its preceding context. This mathematical formulation enforces that the prediction of the flux of patch $x_i$ depends exclusively on the preceding elements $x_{<i}$. In order for the model to optimize this distribution, it must deduce the physical laws implicit in the real astronomical data.
 
 \subsubsection{Contrastive Learning}
 
-Contrastive learning of the \textit{\gls{CLIP}} type \autocite{ar:clip} operates under a different principle: instead of predicting the sequence element by element, it learns to map heterogeneous representations of the same astrophysical object to identical coordinates in a unified embedding space, while maximizing the separation from distinct objects.
+\textit{\gls{CLIP}} learning \autocite{ar:clip} operates under a different principle: rather than predicting the sequence element by element, it learns to map heterogeneous representations of the same astrophysical object to identical coordinates in a unified embedding space, while maximizing separation with respect to different objects. This approach seeks to maximize the similarity between vector representations corresponding to the same object (for example, its image and its spectrum) on a unit hypersphere, while minimizing similarity for pairs of different objects.
 
-This approach aims to maximize the similarity between the vector representations corresponding to the same object (for example, its image and its spectrum) on a unit hypersphere, while minimizing the similarity for pairs of different objects.
-
-During pretraining in batches of size $N$, the network processes positive pairs $\left(v_i, s_i\right)$ that correspond to the same physical object, and contrasts them against $N-1$ negative pairs $\left(v_i, s_j\right)_{j\neq i}$ that correspond to different objects in the batch. The main disadvantage of contrastive learning lies in its dependence on the pretraining batch size. For the model to learn high-fidelity descriptors and avoid trivial solutions, it needs to be compared with a large number of negative examples in each iteration, which requires extremely large batches and critical GPU memory demands. Furthermore, it is worth noting that the contrastive formulation inspired by \textit{\gls{CLIP}} \autocites{ar:clip}{ar:astroclip} is limited by a strictly bimodal and coordinated structure: it mandatorily requires each object in the pretraining dataset to have both modalities (for example, a perfectly matched image-spectrum pair). This severely restricts its use on galaxies or stars for which only photometry (images) or only spectroscopy is available, which represents the vast majority of real astronomical sources. On the contrary, the autoregressive approach of \textit{AstroPT} \autocite{ar:astropt} is flexible, allowing training in a pure unimodal, bimodal, or multimodal fashion, mixing incomplete sequences without requiring mandatory direct correlation, which optimizes the utilization of asymmetric data.
+During pretraining on batches of size $N$, the network processes positive pairs $\left(v_i, s_i\right)$ corresponding to the same physical object, and contrasts them against $N-1$ negative pairs $\left(v_i, s_j\right)_{j\neq i}$ corresponding to different objects in the batch. The main disadvantage of contrastive learning lies in its dependence on the pretraining batch size. For the model to learn high-fidelity descriptors and avoid trivial solutions, it must compare against a large number of negative examples in each iteration, which demands extremely large batch sizes and critical \glspl{GPU} memory requirements. Furthermore, it is worth noting that the contrastive formulation inspired by \textit{\gls{CLIP}} \autocites{ar:clip}{ar:astroclip} is limited by a strictly bimodal and coordinated structure: it mandatorily requires that each object in the pretraining dataset have both modalities available (for example, a perfectly matched image-spectrum pair). This severely restricts its use on galaxies or stars for which only photometry (images) or only spectroscopy is available, which represents the vast majority of real astronomical sources. In contrast, the autoregressive approach of \textit{AstroPT} \autocite{ar:astropt} is flexible, allowing training in purely unimodal, bimodal, or multimodal modes, mixing incomplete sequences without requiring mandatory direct correlation, which optimizes the use of asymmetric data.
 
 \subsection{Mathematical Mechanisms} \label{sec:tb:math}
 
 \subsubsection{Self-Attention Mechanism}
 
-The self-attention mechanism, formally introduced by \textcite{ar:attention} in ``Attention Is All You Need,'' constituted the critical breakthrough for modeling complex scientific sequences. Unlike convolutional or recurrent networks, the \textit{Transformer} computes the relative relevance of each token with respect to all others directly, regardless of their physical separation. However, this introduces a quadratic temporal and memory complexity, $\mathcal{O}\left(L^2\right)$, where $L$ is the sequence length, representing one of the major memory challenges in \textit{\gls{HPC}} environments.
+The self-attention mechanism, formally introduced by \textcite{ar:attention} in ``Attention Is All You Need,'' was the critical breakthrough for modeling complex scientific sequences. Unlike convolutional or recurrent networks, the \textit{Transformer} computes the relative relevance of each token with respect to all others directly, regardless of their physical separation. However, this introduces a quadratic time and memory complexity, $\mathcal{O}\left(L^2\right)$, where $L$ is the sequence length, which represents one of the greatest memory challenges in \textit{\gls{HPC}} environments.
 
-To understand this mechanism mathematically, we first define the self-attention process in a single head of the model. From a sequence of input embeddings $X \in \mathbb{R}^{L \times d_{\text{model}}}$ coming from the encoder, the data is multiplied by three learnable weight matrices to generate the Query ($Q$), Key ($K$), and Value ($V$) vectors:
+To mathematically understand this mechanism, we first define the self-attention process in a single model head. From a sequence of input embeddings $X \in \mathbb{R}^{L \times d_{\text{emb}}}$ from the encoder, the data are multiplied by three learnable weight matrices ($W$) to generate the Query ($Q$), Key ($K$), and Value ($V$) vectors:
 
 \begin{equation}
-Q = X W_Q, \quad W_Q \in \mathbb{R}^{d_{\text{model}} \times d_k}
+Q = X W_Q, \quad W_Q \in \mathbb{R}^{d_{\text{emb}} \times d_k}
 \label{eq:query_proj}
 \end{equation}
 \begin{equation}
-K = X W_K, \quad W_K \in \mathbb{R}^{d_{\text{model}} \times d_k}
+K = X W_K, \quad W_K \in \mathbb{R}^{d_{\text{emb}} \times d_k}
 \label{eq:key_proj}
 \end{equation}
 \begin{equation}
-V = X W_V, \quad W_V \in \mathbb{R}^{d_{\text{model}} \times d_v}
+V = X W_V, \quad W_V \in \mathbb{R}^{d_{\text{emb}} \times d_v}
 \label{eq:value_proj}
 \end{equation}
 
-Conceptually, this process is analogous to a query in a database: each element of the sequence generates a query vector ($Q$) that interacts with the key vectors ($K$) of the other elements via the dot product $Q K^T$. The normalization of these dot products determines the weighting applied to the value vectors ($V$), which contain the original physical information. Self-attention is algebraically computed using the scaled dot-product attention equation:
+where $d_{\text{emb}}$ is the embedding vector dimension and $d_k=d_v=d_{\text{emb}}/h$ being $h$ the amount of heads of the model. Conceptually, this process is analogous to a database query: each element in the sequence generates a query vector ($Q$) that interacts with the key vectors ($K$) of all other elements via the inner product $Q K^T$. The normalization of these inner products determines the weighting applied to the value vectors ($V$), which contain the original physical information. Self-attention is computed algebraically using the scaled dot-product attention equation:
 
 \begin{equation}
 \text{Attention}\left(Q, K, V\right) = \text{softmax}\left(\dfrac{Q K^T}{\sqrt{d_k}}\right) V
 \label{eq:attention_formula}
 \end{equation}
 
-In this formulation, the \texttt{softmax} function plays a key mathematical role: it takes the unnormalized affinity dot product ($Q K^T$) and projects it to a probability distribution whose values are strictly bounded between 0 and 1, sumando exactly 1 along the corresponding sequence. These probability values act as the weighting weights with which the Value matrix ($V$) will be averaged. That is, the model will pay more attention to those tokens whose attention value is higher.
+In this formulation, the \texttt{softmax} function plays a key mathematical role: it takes the unnormalized affinity dot product ($Q K^T$) and projects it onto a probability distribution whose values are strictly bounded between 0 and 1, summing exactly 1 across the entire corresponding sequence. These probability values act as the weighting coefficients with which the Value matrix ($V$) is averaged. That is, the model attends more to those tokens whose attention value is highest.
 
-To equip the model with the ability to simultaneously attend to multiple independent physical aspects in different representation subspaces (for example, simultaneously attending to large-scale morphology and the presence of narrow absorption lines), this basic single-head operation is extrapolated to \textbf{multiple heads operating in parallel} (\textit{Multi-Head Attention}):
+To endow the model with the ability to simultaneously attend to multiple independent physical aspects in different representation subspaces (for example, attending simultaneously to large-scale morphology and the presence of narrow absorption lines), this basic single-head operation is extended to \textbf{multiple heads operating in parallel} by the mean of the \textit{Multi-Head Attention} mechanism:
 
 \begin{equation}
 \text{MultiHead}\left(Q, K, V\right) = \text{Concat}\left(\text{head}_1, \text{head}_2, \dots, \text{head}_h\right) W^O
@@ -138,11 +134,11 @@ To equip the model with the ability to simultaneously attend to multiple indepen
 \label{eq:headi_formula}
 \end{equation}
 
-where the final projection matrix of the concatenation is $W^O \in \mathbb{R}^{h d_v \times d_{\text{model}}}$. Each of these heads is computationally independent of the others, and as the number of heads increases, the model size and the required parameters increase.
+where the output projection matrix of the concatenation is $W^O \in \mathbb{R}^{h d_v \times d_{\text{emb}}}$. Each of these heads is computationally independent of the others, and as the number of heads increases, the model size and the number of required parameters grow accordingly.
 
 \subsubsection{Causality and the Triangular Attention Mask}
 
-In parallel autoregressive pretraining over the entire input sequence, a causal triangular mask is implemented to prevent the leakage of future information caused by data leakage. That is, to prohibit the model from predicting a patch in the sequence based on future patches in the sequence. The causal mask $M \in \mathbb{R}^{L \times L}$ is introduced in the matrix evaluation of attention using \cref{eq:attention_formula}:
+In parallel autoregressive pretraining on the full input sequence, a causal triangular mask is implemented to prevent the leakage of future information caused by data leakage. That is, to prohibit the model from predicting a patch in the sequence based on future patches in that sequence. The causal mask $M \in \mathbb{R}^{L \times L}$ is introduced into the matrix evaluation of attention from \cref{eq:attention_formula}:
 
 \begin{equation}
 \text{Attention}\left(Q, K, V\right) = \text{softmax}\left(\dfrac{Q K^T}{\sqrt{d_k}} + M\right) V
@@ -152,44 +148,60 @@ In parallel autoregressive pretraining over the entire input sequence, a causal 
 The mask matrix $M$ is analytically defined as:
 
 \begin{equation}
-M_{i,j} = \begin{cases} 0 & \text{si } j \le i \\ -\infty & \text{si } j > i \end{cases}
+M_{i,j} = \begin{cases} 0 & \text{if } j \le i \\ -\infty & \text{if } j > i \end{cases}
 \label{eq:mask_matrix}
 \end{equation}
 
-Upon applying the exponential function in the \texttt{softmax} operation, scores of $-\infty$ result in zero weights ($e^{-\infty} = 0$). This guarantees that the attention paid to any future token is strictly zero, forcing the model to make its predictions based exclusively on the preceding context available from the astronomical sequence.
+By applying the exponential function in the \texttt{softmax} operation, the scores of $-\infty$ result in null weights ($e^{-\infty} = 0$). This guarantees that the attention paid to any future token is strictly zero, forcing the model to make its predictions based exclusively on the preceding context available in the astronomical sequence.
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{cnn_receptive_field_2305843017245789784_top_only.png}
+		\caption{Local attention mechanism in a \textit{\gls{CNN}}}
+		\label{fi:cnn_vs_attention}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{self_attention_global_2305843017245789784.png}
+		\caption{Self-attention mechanism in an autoregressive model}
+		\label{fi:self_attention}
+	\end{subfigure}
+	\caption[Structural comparison between convolutional networks and global self-attention]{Comparative conceptual scheme between the processing of a \textit{\gls{CNN}} and the self-attention mechanism in an autoregressive model. In \textbf{(a)}, the convolution applies a local filter of limited size over contiguous neighborhoods. In \textbf{(b)}, the self-attention \autocite{ar:attention} establishes simultaneous global relationships between any patch of the galaxy and the full sequence, dynamically weighting connectivity through the \textit{Query}, \textit{Key}, and \textit{Value} matrices. Plotted galaxy is \textit{Euclid ID}: $1617339942739704796$.}
+	\label{fi:cnn}
+\end{figure}
 
 \subsubsection{Loss Functions for Scientific Data}
 
-The loss function evaluates the discrepancy between the model estimates and the physical reality of the observational data (referred to as \textit{ground-truth}), determining the gradient required for network weight optimization. In autoregressive tasks, for instance, the loss is calculated by comparing the predicted patches or pixels directly with the corresponding pixels of the reference astronomical image.
-
-For regression problems on continuous fluxes, we implement two main metrics:
+The loss function evaluates the discrepancy between the model's estimates and the physical reality of the observational data (known as the \textit{ground truth}), determining the gradient needed to optimize the network weights. In autoregressive tasks, for example, the loss is computed by comparing the predicted patches or pixels directly with the corresponding pixels of the reference astronomical image. For regression problems on continuous fluxes, we implement two main metrics:
 
 \paragraph{Mean Absolute Error}
 
-The \textit{\gls{MAE}} measures the average of absolute discrepancies and represents the loss function used in our pretraining for \textit{AstroPT}. It is defined as:
+The \textit{\gls{MAE}} ($L_1$ Loss) measures the average of absolute discrepancies and represents the loss function used in our pretraining of \textit{AstroPT}. It is defined as:
 
 \begin{equation}
 L_{\text{MAE}} = \dfrac{1}{N} \sum_{i=1}^{N} |y_{\text{true}} - y_{\text{pred}}|
 \label{eq:mae_loss}
 \end{equation}
 
-The advantage of \textit{\gls{MAE}} is its great robustness against outliers, as it does not square the residuals, preventing defective pixels or cosmic rays from dominating the gradient signal.
+The advantage of the \textit{\gls{MAE}} is its high robustness to extreme errors (\textit{outliers}), as it does not square the residuals, preventing defective pixels or cosmic rays from dominating the gradient signal.
 
-\paragraph{The Huber Loss}
 
-As a hybrid alternative, the Huber loss combines the mathematical properties of the two fundamental regression functions. On one hand, the \textit{\gls{MSE}} (L2 loss) is defined as:
+\paragraph{Mean Square Error} The \textit{\gls{MSE}} ($L_2$ Loss) penalizes large discrepancies quadratically, making the gradient sensitive to significant differences. It is defined as:
 
 \begin{equation}
-L_{\text{MSE}} = \dfrac{1}{N} \sum_{i=1}^{N} \left(y_{\text{true}} - y_{\text{pred}}\right)^2
-\label{eq:mse_loss}
+	L_{\text{MSE}} = \dfrac{1}{N} \sum_{i=1}^{N} \left(y_{\text{true}} - y_{\text{pred}}\right)^2
+	\label{eq:mse_loss}
 \end{equation}
 
-The \textit{\gls{MSE}} quadratically penalizes large discrepancies, making the gradient sensitive to significant differences. On the other hand, the Huber loss acts as a mathematical bridge between \textit{\gls{MSE}} and \textit{\gls{MAE}}: it behaves quadratically (identical to \textit{\gls{MSE}}) for small deviations below the threshold $\delta$, and linearly (identical to \textit{\gls{MAE}}) for errors larger than $\delta$:
+\paragraph{The Huber Loss} As a hybrid alternative, the Huber loss acts as a mathematical bridge between the \textit{\gls{MSE}} and the \textit{\gls{MAE}}: it behaves quadratically (identically to the \textit{\gls{MSE}}) for small deviations below the threshold $\delta$, and linearly (identically to the \textit{\gls{MAE}}) for errors larger than $\delta$:
 
 \begin{equation}
 L_{\delta}\left(a\right) = \begin{cases}
-\dfrac{1}{2}a^2 & \text{si } |a| \le \delta \\
-\delta \cdot \left(|a| - \dfrac{1}{2}\delta\right) & \text{si } |a| > \delta
+\dfrac{1}{2}a^2 & \text{if } |a| \le \delta \\
+\delta \cdot \left(|a| - \dfrac{1}{2}\delta\right) & \text{if } |a| > \delta
 \end{cases}
 \label{eq:huber_loss}
 \end{equation}
@@ -198,17 +210,16 @@ where $a = y_{\text{true}} - y_{\text{pred}}$ represents the token prediction re
 
 \begin{equation}
 \dfrac{\partial L_{\delta}\left(a\right)}{\partial y_{\text{pred}}} = \begin{cases}
--a & \text{si } |a| \le \delta \\
--\delta \cdot \text{sgn}\left(a\right) & \text{si } |a| > \delta
+-a & \text{if } |a| \le \delta \\
+-\delta \cdot \text{sgn}\left(a\right) & \text{if } |a| > \delta
 \end{cases}
 \label{eq:huber_derivative}
 \end{equation}
 
-This demonstrates that the gradient is strictly bounded by $\pm\delta$, preventing model destabilization in the presence of extreme noisy data.
+This demonstrates that the gradient is strictly bounded by $\pm\delta$, which prevents the model from being destabilized by extreme noisy data.
 
 \paragraph{The InfoNCE Loss for Contrastive Models}
-
-In contrastive models such as \textit{AstroCLIP} \autocite{ar:astroclip}, the symmetric InfoNCE loss is used to align normalized images ($v_i$) and spectra ($s_i$) in a batch. The loss for the image-to-spectrum direction is defined as:
+In \textit{\gls{CLIP}}-type models such as \textit{AstroCLIP} \autocite{ar:astroclip}, the symmetric InfoNCE loss is used to align normalized images ($v_i$) and spectra ($s_i$) within a batch. The loss for the image-to-spectrum direction is defined as:
 
 \begin{equation}
 \mathcal{L}_{i} = -\log \dfrac{\exp\left(v_i \cdot s_i / \tau\right)}{\sum_{j=1}^{N} \exp\left(v_i \cdot s_j / \tau\right)}
@@ -222,20 +233,20 @@ where the temperature $\tau$ scales the backpropagation gradients. Its derivativ
 \label{eq:infonce_derivative}
 \end{equation}
 
-This derivative demonstrates how the gradient pushes the image embedding toward the corresponding positive spectrum ($s_i$) and away from the negative spectra ($s_j$), regulated in an inversely proportional manner by the temperature $\tau$.
+This derivative shows how the gradient pushes the image embedding toward the corresponding positive spectrum ($s_i$) and away from the negative spectra ($s_j$), regulated inversely by the temperature $\tau$.
 
 \subsubsection{Gradient Descent and Backpropagation}
 
 The optimization of a deep neural network is the process by which the network updates its free parameters to minimize the loss function. These parameters are:
 \begin{itemize}
-\item \textbf{Weights ($W$):} Matrices of numerical coefficients that determine the relative importance of each input in the activation of the next neuronal layer.
-\item \textbf{Biases ($b$):} Additive displacement vectors that allow for the independent adjustment of the activation threshold of each neuron.
+\item \textbf{Weights ($W$):} Matrices of numerical coefficients that determine the relative importance of each input in the activation of the next neural layer.
+\item \textbf{Biases ($b$):} Additive displacement vectors that allow independent adjustment of the activation threshold of each neuron.
 \end{itemize}
 
 The process is executed in two cyclic stages:
 \begin{enumerate}
-\item \textbf{Backpropagation:} After calculating the loss at the output, the error propagates backward through the network layers. Using the chain rule of differential calculus, the partial gradient of the loss function with respect to each individual weight and bias is computed $\left(\dfrac{\partial L}{\partial W}\right)$.
-\item \textbf{Gradient descent:} Using the calculated gradient, an optimization algorithm (such as AdamW; \textcite{ar:loshchilov-2019}) updates the weights iteratively in the direction opposite to the gradient (the path of maximum loss descent):
+\item \textbf{Backpropagation:} After computing the loss at the output, the error is propagated backward through the network layers. Using the chain rule of differential calculus, the partial gradient of the loss function with respect to each individual weight and bias $\left(\dfrac{\partial L}{\partial W}\right)$ is computed.
+\item \textbf{Gradient descent:} Using the computed gradient, an optimization algorithm (such as AdamW; \textcite{ar:loshchilov-2019}) iteratively updates the weights in the direction opposite to the gradient (the direction of steepest descent of the loss):
 
 \begin{equation}
 W_{\text{new}} = W_{\text{old}} - \eta \cdot \dfrac{\partial L}{\partial W}
@@ -249,28 +260,28 @@ W_{\text{new}} = W_{\text{old}} - \eta \cdot \dfrac{\partial L}{\partial W}
 
 \subsubsection{Algebraic Properties of the Latent Space}
 
-The embedding space $\mathbb{R}^d$ constitutes a vector latent space endowed with a geometric structure induced by the pretraining of the model \autocites{ar:astropt}{ar:astroclip}. In this space, each galaxy or star is represented by a high-dimensional vector ($d = 768$). By normalizing these vectors under the $L_2$ norm, they are projected onto a unit hypersphere $\mathbb{S}^{d-1}$.
+The embedding space $\mathbb{R}^{d_{\text{emb}}}$ constitutes a latent vector space endowed with a geometric structure induced by the model's pretraining \autocites{ar:astropt}{ar:astroclip}. In this space, each galaxy or star is represented by a high-dimensional vector ($d_{\text{emb}} = 768$). When these vectors are normalized under the $L_2$ norm, they are projected onto a unit hypersphere $\mathbb{S}^{d_{\text{emb}}-1}$.
 
-The physical similarity between two objects is evaluated via direct algebraic operations in this vector space, such as the cosine similarity:
+The physical similarity between two objects is evaluated through direct algebraic operations in this vector space, such as cosine similarity:
 
 \begin{equation}
 \text{Sim}\left(u, v\right) = \dfrac{u \cdot v}{\left\|u\right\|_2 \left\|v\right\|_2} = \cos\left(\theta\right)
 \label{eq:cosine_similarity}
 \end{equation}
 
-This linear and metric structure allows for vector algebra operations (such as addition and subtraction of embeddings) and mathematical clustering to infer astrophysical properties.
+This linear and metric structure allows vector algebra operations (such as sums and differences of embeddings) and mathematical clustering to be performed to infer astrophysical properties.
 
 \subsubsection{The Latent Manifold and Instrumental Noise Filtering}
 
-The latent manifold hypothesis postulates that high-dimensional astronomical observations (images with thousands of pixels or spectra with thousands of channels) actually concentrate on a physical submanifold of low intrinsic dimension, governed by the physical laws of stellar evolution and gravity. By projecting raw data toward the compressed embedding space, the neural network acts as a natural filter: since instrumental noise (readout noise, atmospheric contamination) is purely stochastic and uncorrelated, the model cannot compress it efficiently and discards it, retaining only the intrinsic physical characteristics of the astronomical object \autocite{ar:portillo-2020}.
+The latent manifold hypothesis postulates that high-dimensional astronomical observations (images with thousands of pixels or spectra with thousands of channels) actually concentrate on a low intrinsic-dimensional physical submanifold governed by the physical laws of stellar evolution and gravity. By projecting the raw data into the compressed embedding space, the neural network acts as a natural filter: since instrumental noise (readout noise, atmospheric contamination) is purely stochastic and uncorrelated, the model cannot compress it efficiently and discards it, retaining only the intrinsic physical features of the astronomical object \autocite{ar:portillo-2020}.
 
 \subsubsection{Correlation of the Latent Manifold with Physical Parameters}
 
 An optimally structured latent space spontaneously self-organizes objects according to their physical properties:
 \begin{enumerate}
-\item \textbf{Cosmological Redshift ($z$):} Embeddings are ordered along continuous trajectories that reproduce the shifting of narrow spectral lines and optical discontinuities such as the Lyman break or the $4000\,\text{\AA}$ break.
-\item \textbf{Stellar Mass ($M_*$) and \gls{SFR}:} Galaxies are geometrically segregated, tracing the star-forming main sequence, separating active spiral galaxies from passive elliptical galaxies.
-\item \textbf{Metallicity ($\left[Fe/H\right]$) and Stellar Types:} For stars, the embeddings recreate the OBAFGKM sequence and distinguish giants from dwarfs according to their surface gravity ($\log g$).
+\item \textbf{Cosmological Redshift ($z$):} Embeddings are ordered along continuous trajectories that reproduce the shift of narrow spectral lines and optical discontinuities such as the Lyman break or the $4000\,\text{\AA}$ break.
+\item \textbf{Stellar Mass ($M_*$) and \gls{SFR}:} Galaxies are geometrically segregated, tracing the main star-forming sequence and separating active spiral galaxies from passive ellipticals.
+\item \textbf{Metallicity ($\left[Fe/H\right]$) and Stellar Types:} For stars, embeddings recreate the OBAFGKM sequence and distinguish giants from dwarfs based on their surface gravity ($\log g$).
 \end{enumerate}
 
 A linear interpolation between two latent points $h_A, h_B \in \mathcal{M}$:
@@ -280,20 +291,19 @@ h\left(t\right) = \left(1-t\right)h_A + t h_B, \quad t \in \left[0, 1\right]
 \label{eq:latent_interpolation}
 \end{equation}
 
-reproduces physically coherent evolutionary pathways, demonstrating that the latent space of the model is capable of encoding and interpolating the underlying physical laws of the universe in a continuous and consistent manner.
+reproduces physically coherent evolutionary paths, demonstrating that the model's latent space is capable of continuously and consistently encoding and interpolating the underlying physical laws of the universe.
 
 \subsubsection{The Platonic Representation Hypothesis in Astrophysics}
 
-The Platonic representation hypothesis \autocites{ar:huh-2024}{ar:duraphe-2025} postulates that different deep neural models (whether autoregressive or contrastive), trained under different loss objectives on independent observational datasets, converge toward a latent representation space that is topologically equivalent. This is because all astronomical observations of an object are projections of the same elementary physical reality. The different models are forced to learn the same physical laws (gravity, thermodynamics) to minimize their respective pretraining losses, converging to the same physical representation of the universe.
+The platonic representation hypothesis \autocites{ar:huh-2024}{ar:duraphe-2025} postulates that different deep neural models (whether autoregressive or contrastive), trained under different loss objectives on independent observational datasets, converge toward a latent representation space that is topologically equivalent. This arises because all astronomical observations of an object are projections of the same elementary physical reality. The different models are compelled to learn the same physical laws (gravity, thermodynamics) to minimize their respective pretraining losses, converging on the same physical representation of the universe.
 
 \subsubsection{Visualization and Interpretation of the Latent Space}
-
-To visualize and analyze this complex high-dimensional latent manifold in 2D, non-linear dimensionality reduction algorithms such as \textit{\gls{UMAP}} are used \autocite{ar:umap}.
+To visualize and analyze this complex high-dimensional latent manifold in 2D, non-linear dimensionality reduction algorithms such as \textit{\gls{UMAP}} \autocite{ar:umap} are employed.
 
 The \textit{\gls{UMAP}} algorithm operates in two main stages:
 \begin{enumerate}
-\item \textbf{Construction of the relation graph:} In the high-dimensional space ($d = 768$), local distances between embeddings are evaluated to construct a fuzzy graph structure that preserves nearest neighborhoods.
-\item \textbf{Optimization of the two-dimensional projection:} The graph is projected onto a two-dimensional space by minimizing the fuzzy cross-entropy between the high- and low-dimensional distances:
+\item \textbf{Relationship graph construction:} In the high-dimensional space ($d_{\text{emb}} = 768$), local distances between embeddings are evaluated to construct a fuzzy graph structure that preserves nearest neighborhoods.
+\item \textbf{Bidimensional projection optimization:} The graph is projected onto a two-dimensional space by minimizing the fuzzy cross-entropy between the high- and low-dimensional distances:
 
 \begin{equation}
 \mathcal{L}_{\text{UMAP}} = \sum_{i \neq j} \left[ p_{i,j} \log \left(\dfrac{p_{i,j}}{q_{i,j}}\right) + \left(1 - p_{i,j}\right) \log \left(\dfrac{1 - p_{i,j}}{1 - q_{i,j}}\right) \right]
@@ -301,4 +311,4 @@ The \textit{\gls{UMAP}} algorithm operates in two main stages:
 \end{equation}
 \end{enumerate}
 
-This optimization enables visual detection of distinct sets of galaxies or clustering trends identified by the model, see \cref{sec:res:umap}.
+This optimization makes it possible to visually detect distinct galaxy clusters or trends in how the model groups them.

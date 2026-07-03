@@ -1,0 +1,172 @@
+%---------------------------------------------------------%
+% AUTOMATIC STANDALONE WRAPPER
+%---------------------------------------------------------%
+\newif\ifstandalone
+\unless\ifdefined\university
+  \standalonetrue
+\else
+  \standalonefalse
+\fi
+
+\ifstandalone
+  \documentclass[11pt,a4paper]{article}
+  \usepackage[utf8]{inputenc}
+  \providecommand{\coverfont}{\fontfamily{pag}\selectfont}
+  \usepackage{geometry}
+  \usepackage{graphicx}
+  \usepackage{xcolor}
+  \usepackage{subcaption}
+  \usepackage{float}
+  \usepackage[most]{tcolorbox}
+  \geometry{a4paper, margin=2.5cm}
+  \definecolor{primarycolor}{HTML}{000000}
+  \definecolor{headingcolor}{HTML}{000000}
+  \definecolor{covercolor}{HTML}{1A237E}
+  \definecolor{tablerowcolor}{HTML}{F2F2F2}
+  %===========================================================%
+  % WARNING: If using the main template, DO NOT edit these
+  % variables here. Modify them in configuration/metadata.tex.
+  % Only edit these if compiling this cover page standalone.
+  %===========================================================%
+  \newcommand{\university}{UNIVERSITY OF EXCELLENCE}
+  \newcommand{\faculty}{Faculty of Science and Technology}
+  \newcommand{\institution}{Department of Physics and Astronomy}
+  \newcommand{\degree}{Master's Degree in Astrophysics}
+  \newcommand{\worktype}{Master's Thesis}
+  \newcommand{\titleThesis}{Foundation Models for Astronomy}
+  \newcommand{\subtitleThesis}{Developing a multimodal foundation model for Astronomy}
+  \newcommand{\authorThesis}{Firstname Lastname}
+  \newcommand{\supervisors}{Dr. Supervisor Firstname Lastname \\ Dr. Co-Supervisor Firstname Lastname}
+  \newcommand{\dateThesis}{July 2026}
+  \newcommand{\logoUniversity}{../figures/logo_university.png}
+  \newcommand{\logoInstitution}{../figures/logo_department.png}
+  \newcommand{\logoBackground}{../frontpages/cover_background.png}
+  \begin{document}
+\fi
+
+\unless\ifdefined\logoBackground
+  \newcommand{\logoBackgroundTop}{figures/deep_gem}
+  \newcommand{\logoBackgroundBottom}{figures/deep_gem_2}
+\fi
+
+\begin{titlepage}
+	\newgeometry{left=2.2cm, right=2.2cm, top=2.2cm, bottom=2.2cm}
+	
+	\noindent
+	\begin{tcolorbox}[
+		enhanced,
+		remember as=diagonalbox,
+		overlay={
+			% --- TOP IMAGE SECTION ---
+			% Clipped diagonal image at the very top of the page (from top edge down to ~5.5cm/7.0cm)
+			\begin{scope}
+				\clip (current page.north west) 
+					-- ([yshift=-5.5cm]current page.north west) 
+					-- ([yshift=-4.0cm]current page.north east) 
+					-- (current page.north east) -- cycle;
+				
+				\node[anchor=north, inner sep=0pt, outer sep=0pt, xshift=0.0cm, yshift=3.0cm] at (current page.north) 
+					{\includegraphics[width=\paperwidth]{\logoBackgroundTop}};
+			\end{scope}
+			
+			% Slanted colored accent line just below the top image
+			\draw[covercolor, line width=0pt] 
+				([yshift=-5.5cm]current page.north west) 
+				-- ([yshift=-4.0cm]current page.north east);
+				
+			% --- BOTTOM IMAGE SECTION ---
+			% Thinner diagonal image container at the bottom (cropped down to ~3.5cm/5.0cm to free up text space)
+			\begin{scope}
+				\clip (current page.south west) 
+					-- ([yshift=3.5cm]current page.south west) 
+					-- ([yshift=5.0cm]current page.south east) 
+					-- (current page.south east) -- cycle;
+				
+				\node[anchor=south, inner sep=0pt, outer sep=0pt, yshift=-4.0cm] at (current page.south) 
+					{\includegraphics[width=\paperwidth]{\logoBackgroundBottom}};
+			\end{scope}
+			
+			% Slanted colored accent line just above the bottom image
+			\draw[covercolor, line width=0pt] 
+				([yshift=3.5cm]current page.south west) 
+				-- ([yshift=5.0cm]current page.south east);
+		},
+		boxrule=0pt,
+		frame hidden,
+		interior hidden,
+		width=\textwidth,
+		height=\textheight,
+		valign=top,
+		top=0pt,bottom=0pt,left=0pt,right=0pt
+	]
+		\coverfont
+		
+
+		\vspace*{5.5cm}
+		
+		% Integrated Header Grid: Logos flanking the Institution Details
+		\noindent
+		\begin{minipage}[c]{0.2\linewidth}
+			\raggedright
+			\includegraphics[width=1.0\linewidth]{\logoUniversity}
+		\end{minipage}%
+		\begin{minipage}[c]{0.60\linewidth}
+			\centering
+			{\LARGE\scshape\textbf{\university}\par}
+			\vspace*{0.15cm}
+			{\large\scshape{\faculty}\par}
+			\vspace*{0.30cm}
+			{\LARGE\scshape\textbf{\institution}\par}
+			\vspace*{0.80cm}
+			{\Large\textbf{\degree}\par}
+			\vspace*{0.80cm}
+			{\Large\scshape{\worktype}\par}
+		\end{minipage}%
+		\begin{minipage}[c]{0.2\linewidth}
+			\raggedleft
+			\includegraphics[width=1.0\linewidth]{\logoInstitution}
+		\end{minipage}
+		
+		\vspace*{1.0cm}
+		
+		\begin{center}
+			% Main Thesis Title and Subtitle
+			{\Huge\textbf{\titleThesis}\par}
+			\vspace*{0.4cm}
+			{\Large\textit{\subtitleThesis}\par}
+			
+			\vspace*{1.5cm}
+			
+			% Author & Supervisor details
+			{\large{Prepared by:}\par}
+			{\LARGE\textbf{\authorThesis}\par}
+			
+			\vspace*{0.5cm}
+			
+			{\large{Supervised by:}\par}
+			{\Large{\supervisors}\par}
+		\end{center}
+		
+		\vspace*{1.5cm}
+		
+		\begin{center}
+			%{\large{Submitted in partial fulfilment of the requirements for}\par}
+			
+			\vspace*{0.1cm}
+			{\Large\textbf{\dateThesis}\par}
+		\end{center}
+		
+		\vspace*{0.2cm} % subtle margin above the page edge
+		
+	\end{tcolorbox}
+	
+	\restoregeometry
+\end{titlepage}
+
+\ifstandalone
+  \let\next\enddocument
+\else
+  \newpage\null\thispagestyle{empty}\newpage
+  \let\next\relax
+\fi
+\next

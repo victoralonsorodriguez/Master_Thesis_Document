@@ -20,6 +20,7 @@
 *.mtc0
 *.run.xml
 *.pdf
+!figures/*.pdf
 *.txt
 *.bbl-SAVE-ERROR
 

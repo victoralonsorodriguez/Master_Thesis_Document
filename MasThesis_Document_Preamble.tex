@@ -10,8 +10,9 @@
 \usepackage{blindtext}                          % Placeholder text generator
 
 
-% Typography: Times font for text
+% Typography: Times font for text and math mode
 \usepackage{newtxtext}
+\usepackage{newtxmath}
 
 % Different font for the frontpage
 \newcommand{\coverfont}{\fontfamily{pag}\selectfont}
@@ -35,6 +36,18 @@
 \setlist[enumerate,2]{label=\theenumi.\arabic*}
 \setlist[enumerate,3]{label=\theenumii.\alph*}
 \renewcommand\labelitemi{-}                     % Itemize bullet style
+
+%---------------------------------------------------------%
+% SMART INCLUDE SWITCH (PAGE BREAK CONTROL)
+%---------------------------------------------------------%
+\newbool{sectionpagebreak}
+\newcommand{\smartinclude}[1]{%
+	\ifbool{sectionpagebreak}{%
+		\include{#1}%
+	}{%
+		\input{#1}%
+	}%
+}
 
 
 %---------------------------------------------------------%
@@ -98,8 +111,8 @@ giveninits=true
 %---------------------------------------------------------%
 \usepackage{mathtools}                          % Mathematical typesetting utilities
 \usepackage{amsmath}                            % AMS mathematical environments
+\let\Bbbk\relax                                 % Fix clash between newtxmath and amssymb
 \usepackage{amssymb}                            % Extra mathematical symbols
-\usepackage{newtxmath}							% Times font for math mode
 \usepackage{bm}                                 % Bold mathematical font support
 \usepackage{physics}                            % Physics mathematical operators
 \usepackage[makeroom]{cancel}                   % Strikethrough math terms
@@ -121,6 +134,13 @@ giveninits=true
 \usepackage[
 	plainpages=false, 
 	pdfpagelabels=true]{hyperref}				% Clickable hyperlinks and PDF meta
+	
+% Appendix package setup
+\usepackage{appendix}
+\renewcommand{\appendixname}{Appendices}
+\renewcommand{\appendixtocname}{Appendices}
+\renewcommand{\appendixpagename}{Appendices}
+
 \usepackage[english,sort&compress,nameinlink,noabbrev]{cleveref} % Smart context-aware referencing
 \usepackage{calc}                               % In-preamble math dimension calculations
 \usepackage[nottoc,notlot,notlof]{tocbibind}    % Add bibliography and tables in TOC
@@ -132,7 +152,7 @@ giveninits=true
 
 % Spacing adjustments in Table of Contents
 \makeatletter
-\pretocmd{\section}{\addtocontents{toc}{\protect\addvspace{15\p@}}}{}{}
+\pretocmd{\section}{\addtocontents{toc}{\protect\addvspace{8\p@}}}{}{}
 \pretocmd{\subsection}{\addtocontents{toc}{\protect\addvspace{1\p@}}}{}{}
 \makeatother
 
@@ -166,11 +186,9 @@ giveninits=true
 \crefmultiformat{figure}{Figures~#2{\bfseries\color{figurecolor}#1}#3}{ and  #2{\bfseries\color{figurecolor}#1}#3}{, #2{\bfseries\color{figurecolor}#1}#3}{ and #2{\bfseries\color{figurecolor}#1}#3}
 \crefmultiformat{section}{sections~#2{\bfseries\color{primarycolor}#1}#3}{ and  #2{\bfseries\color{primarycolor}#1}#3}{, #2{\bfseries\color{primarycolor}#1}#3}{ #2{\bfseries\color{primarycolor}#1}#3}
 
-% Appendix package setup
-\usepackage{appendix}
-\renewcommand{\appendixname}{Appendices}
-\renewcommand{\appendixtocname}{Appendices}
-\renewcommand{\appendixpagename}{Appendices}
+\crefname{appendix}{Appendix}{Appendices}
+\Crefname{appendix}{Appendix}{Appendices}
+\crefformat{appendix}{appendix~#2{\bfseries\color{primarycolor}#1}#3}
 
 
 %---------------------------------------------------------%
@@ -275,7 +293,7 @@ giveninits=true
 % BLOCK 10: FRONTPAGE & LAYOUT ENGINES
 %---------------------------------------------------------%
 
-\usepackage{background}                         % Background images utility
+% \usepackage{background}                         % Background images utility (REMOVED: causes "Draft" watermark by default)
 \usepackage{ragged2e}                           % Advanced text alignment
 
 
@@ -360,6 +378,50 @@ giveninits=true
 	\pagestyle{abastractpage}
 	\printbibliography[heading=bibintoc]     	% Generate bibliography index
 }
+
+% Command to change TOC depth immediately (fixes \include asynchronous writing issues)
+\makeatletter
+\newcommand{\setTOCdepth}[1]{%
+    \immediate\write\@auxout{\string\@writefile{toc}{\string\setcounter{tocdepth}{#1}}}%
+}
+\makeatother
+
+% Parametrized Appendices command
+\makeatletter
+\newcommand\thesisappendices[1]{
+	\clearpage
+	
+	\begin{appendices}
+		% Force cleveref to name these sections "appendix"
+		\crefalias{section}{appendix}
+		\crefalias{subsection}{appendix}
+		
+		% Redefine the representation of figure and table counters inside the appendices environment
+		\@addtoreset{figure}{section}
+		\@addtoreset{table}{section}
+		\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+		\renewcommand{\thetable}{\thesection.\arabic{table}}
+		
+		% Change page numbering style for appendices to A.1, A.2...
+		\setcounter{page}{1}
+		\renewcommand{\thepage}{A.\arabic{page}}
+		
+		% Set the header/footer style for appendices
+		\pagestyle{appendixpage}
+		
+		\setTOCdepth{1} % Hide subsections for ALL appendices in TOC
+		#1
+		
+		\clearpage % Ensure the last page of the appendices is flushed before the environment closes and local variables revert
+	\end{appendices}
+	
+	% Restore original numbering format (Note: \thepage, \thefigure, \thetable were local to the environment, but redefining them here globally ensures safety)
+	\renewcommand{\thefigure}{\arabic{figure}}
+	\renewcommand{\thetable}{\arabic{table}}
+	\renewcommand{\thepage}{\arabic{page}}
+	\setTOCdepth{2} % Restore original TOC depth for anything that follows
+}
+\makeatother
 
 
 %---------------------------------------------------------%

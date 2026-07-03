@@ -1,0 +1,93 @@
+% !TeX spellcheck = en_US
+\section{Nearest Neighbor Search} \label{sec:ap:sim}
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[b]{0.95\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{similarity_dashboard_39633451363601771}
+		\caption{Nearest neighbors for a \textit{dual \gls{AGN}}.}
+		\label{fi:ap:agn}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.95\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{similarity_dashboard_39633432778638992}
+		\caption{Nearest neighbors for a spiral galaxy.}
+		\label{fi:ap:sim}
+	\end{subfigure}
+	\caption[Nearest neighbor search results for two objects]{Visualization of nearest neighbors retrieved by the similarity engine of \textit{AstroPT MM}. After the first column, which shows the query object, the columns from left to right display the first neighbor in the image, spectral, and joint modalities, respectively. In \textbf{(a)}, the query object is one of the four \textit{dual \glspl{AGN}} available in the project dataset. One can verify that the search engine retrieves neighbors with similar morphology and spectrum. In \textbf{(b)}, the first neighbors in each modality are shown for a spiral galaxy. The first spectral neighbor differs morphologically, being an elliptical galaxy. This behavior is expected, since the spectral latent space is ordered by prioritizing spectroscopic features. This is precisely why the use of the joint modality, shown in the final column, is fundamental: it is capable of retrieving a spiral galaxy with a spectrum similar to that of the query galaxy.}
+	\label{fi:ap_similarity}
+\end{figure}
+
+This appendix describes in detail the mathematical formulation, algorithmic workflows, and astrophysical validation cases of the unsupervised similarity search engine developed from the latent representations of \textit{AstroPT MM}. This engine constitutes an unsupervised data mining tool capable of operating on any of the model's representation spaces (visual, spectral, or joint) to retrieve physical analogies or identify atypical astrophysical systems in massive catalogs.
+
+\subsection{Mathematical Formulation}
+
+Let $\mathcal{D} = \{\mathbf{h}_1, \mathbf{h}_2, \dots, \mathbf{h}_N\}$ be the set of latent vectors for all available data ($N = 137\,661$ galaxies), where $\mathbf{h}_i \in \mathbb{R}^{d_{\text{emb}}}$ represents the feature vector of the $i$-th galaxy in a $d$-dimensional latent space. For a query object characterized by a latent vector $\mathbf{q} \in \mathbb{R}^{d_{\text{emb}}}$, we define the proximity metric using cosine similarity:
+
+\begin{equation}
+S_c(\mathbf{q}, \mathbf{h}_i) = \frac{\mathbf{q} \cdot \mathbf{h}_i}{\|\mathbf{q}\|_2 \|\mathbf{h}_i\|_2} = \frac{\sum_{j=1}^{d_{\text{emb}}} q_j h_{i,j}}{\sqrt{\sum_{j=1}^{d_{\text{emb}}} q_j^2} \sqrt{\sum_{j=1}^{d_{\text{emb}}} h_{i,j}^2}}
+\label{eq:ap_cosine}
+\end{equation}
+
+The $k$-nearest neighbor ($k$-NN) search problem consists in finding the subset of indices $I_k(\mathbf{q}) \subset \{1, \dots, N\}$ of size $k$ that maximizes the similarity:
+
+\begin{equation}
+I_k(\mathbf{q}) = \arg\max_{I, |I|=k} \sum_{i \in I} S_c(\mathbf{q}, \mathbf{h}_i)
+\label{eq:ap_knn}
+\end{equation}
+
+
+\subsection{Workflows}
+
+The similarity engine is designed to adapt to the query data availability. If the object is included in the total available sample, the search for the nearest neighbors proceeds directly. If it is an external object for which visual and/or spectral flux values are available, the latent vector associated with the object's available modalities is first extracted. Once extracted, the nearest neighbor search proceeds from its latent vectors. For this purpose, three workflows are available:
+
+\begin{enumerate}
+	\item \textbf{Isolated Unimodal Search:}
+	Used when the query consists of a single physical modality (for example, a \textit{Euclid} image or a \textit{\gls{DESI}} spectrum) and it is desired to search for analogs within that same physical modality.
+
+	\item \textbf{Bimodal Search in Joint Space:}
+	Used when both modalities of the galaxy are available and it is desired to query the unified latent space to find objects that simultaneously share structural and spectroscopic physical similarities. The bimodal query vector $\mathbf{q}_{\text{joint}}$ is constructed by normalizing and integrating both embeddings:
+
+	\begin{equation}
+	\mathbf{q}_{\text{joint}} = \frac{\hat{\mathbf{q}}_{\text{img}} + \hat{\mathbf{q}}_{\text{spec}}}{2}
+	\label{eq:ap_q_joint}
+	\end{equation}
+
+	where $\hat{\mathbf{q}}_{\text{img}} = \mathbf{q}_{\text{img}}/\|\mathbf{q}_{\text{img}}\|_2$ and $\hat{\mathbf{q}}_{\text{spec}} = \mathbf{q}_{\text{spec}}/\|\mathbf{q}_{\text{spec}}\|_2$.
+
+	\item \textbf{Cross-Modal Retrieval Search:}
+	Designed for asymmetric scenarios where the query object lacks one of the two modalities, for example, a galaxy detected by \textit{Euclid} for which no \textit{\gls{DESI}} spectrum is available, but where it is desired to query the joint latent space to infer its bimodal properties. To resolve this asymmetry, the following approximation workflow is implemented:
+	\begin{enumerate}
+		\item An initial unimodal search is performed using the available embedding (e.g., $\mathbf{q}_{\text{img}}$) to find its $k_{\text{ref}}$ nearest neighbors in the image space.
+		\item The real spectral embeddings of these morphological neighbors are retrieved, and their arithmetic mean is computed to estimate a proxy spectral vector representative of that morphological type for the query object:
+		\begin{equation}
+		\mathbf{h}_{\text{spec, proxy}} = \frac{1}{k_{\text{ref}}} \sum_{i \in I_{\text{ref}}} \hat{\mathbf{h}}_{\text{spec}, i}
+		\label{eq:ap_proxy}
+		\end{equation}
+		\item The generated proxy vector is normalized to unit norm:
+		\begin{equation}
+		\hat{\mathbf{h}}_{\text{spec, proxy}} = \frac{\mathbf{h}_{\text{spec, proxy}}}{\|\mathbf{h}_{\text{spec, proxy}}\|_2}
+		\label{eq:ap_norm_proxy}
+		\end{equation}
+		\item Finally, a joint embedding is constructed by combining the real query vector with the estimated proxy vector:
+		\begin{equation}
+		\mathbf{q}_{\text{joint, proxy}} = \frac{\hat{\mathbf{q}}_{\text{img}} + \hat{\mathbf{h}}_{\text{spec, proxy}}}{2}
+		\label{eq:ap_q_proxy}
+		\end{equation}
+	\end{enumerate}
+	This unified proxy vector $\mathbf{q}_{\text{joint, proxy}}$ is used to query the joint space, allowing the retrieval of complete bimodal analogs consistent with the morphology of the original object.
+\end{enumerate}
+
+\subsection{Case Studies: Dual AGNs}
+
+The identification of \textit{dual \glspl{AGN}} harboring two supermassive black holes in an active accretion phase in their central regions, is one of the greatest challenges in extragalactic astrophysics. This scenario requires simultaneously confirming two complex signatures: the presence of a spatially resolved double bright nucleus (morphology) and a spectrum exhibiting broadened forbidden emission lines or Doppler double-peaked profiles induced by the orbital kinematics of the central mass sinks. The nearest neighbor search from these objects yielded the following information:
+
+\begin{itemize}
+	\item \textbf{Limit due to critical data volume:} The analysis of these objects presents, in the current context of this project, major challenges, since the total dataset contains only four known candidates for this type of object. Therefore, the model lacks sufficient statistical references to autonomously conceptualize the physical signature of a \textit{dual \gls{AGN}}. Consequently, the tool does not act as a direct classifier, but rather as a \textbf{candidate generator} for subsequent high-resolution imaging and spectroscopic studies.
+
+	\item \textbf{Fiber aperture bias problem:} A critical physical and instrumental obstacle for the confirmation of these systems is the centering of the \textit{\gls{DESI}} optical fibers. Since the fiber has a fixed on-sky diameter of $1.5''$ and is automatically pointed at the brightness center of the system, it frequently covers only one of the two nuclei undergoing active merger. As a consequence, the \textit{\gls{DESI}} spectrum records only the ionization signature of one of the black holes, losing the information channel of the second nucleus.
+
+	\item \textbf{Utility of the similarity engine:} Despite these limitations, the latent representation of \textit{AstroPT MM} demonstrates its practical value in cross-matching modalities. When searching for neighbors, the engine is capable of identifying systems in advanced physical interaction or with resolved double optical nuclei. If the retrieved object shows a spectrum characteristic of this type of system, it can be proposed for more detailed observations or alternative techniques to determine its nature.
+\end{itemize}
