@@ -44,7 +44,7 @@ where $\alpha_t = 1 - \beta_t$ and $\bar{\alpha}_t = \prod_{s=1}^t \alpha_s$.
 
 The goal is to reconstruct the information starting from random noise. To do this, a neural network (a U-Net architecture modified for 1D vectors) with parameters $\theta$ is trained. The function of this network is to look at the noisy vector $\mathbf{z}_t$ at step $t$ and predict exactly what amount of noise $\boldsymbol{\epsilon}_\theta$ was added to it at that step.
 
-To ensure the generation is not random, but corresponds to the galaxy observed at a given redshift, we condition the U-Net prediction by jointly injecting the Euclid image latent vector ($\mathbf{z}_i$) and the redshift ($z$) into the network bottleneck using cross-attention mechanisms, analogously to how \textit{Stable Diffusion} is conditioned by text. The network is optimized by minimizing the difference between the real noise $\boldsymbol{\epsilon}$ and the predicted noise $\boldsymbol{\epsilon}_\theta$:
+To ensure the generation is not random, but corresponds to the galaxy observed at a given redshift, we condition the U-Net prediction by jointly injecting the Euclid image latent vector ($\mathbf{z}_i$) and the redshift ($z$) into the network bottleneck using cross-attention mechanisms, analogous to how \textit{Stable Diffusion} is conditioned by text. The network is optimized by minimizing the difference between the real noise $\boldsymbol{\epsilon}$ and the predicted noise $\boldsymbol{\epsilon}_\theta$:
 \begin{equation}
 \mathcal{L}_{\text{LDM}} = \mathbb{E}_{\mathbf{z}_0, \boldsymbol{\epsilon}, t, \mathbf{z}_i, z} \left[ \|\boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{z}_i, z)\|^2 \right]
 \label{eq:ap_ldm_loss}
@@ -77,9 +77,6 @@ To synthesize the continuous spectrum of an external galaxy for which only its i
 
 \subsection{Generated Results}
 
-To validate the performance and consistency of the latent diffusion model, \cref{fi:ap:diff} shows a qualitative comparison between the original DESI spectrum and the synthetic reconstructions obtained from the corresponding Euclid image cutout.
-
-
 \begin{figure}[H]
 	\centering
 	\begin{subfigure}[b]{\textwidth}
@@ -104,6 +101,8 @@ To validate the performance and consistency of the latent diffusion model, \cref
 	\caption[]{(Continued) Qualitative comparison between the original  \textit{\gls{DESI}} spectrum (in black) and three synthetic spectra generated from the \textit{Euclid} image embeddings and the predicted redshift using the latent diffusion model. The three synthetic spectra (represented in different colors) correspond to three initializations of the reverse sampling process with different pseudorandom seeds, illustrating the physical uncertainty and variability in the estimation of emission lines and the continuum slope. The spectral lines are positioned according to the predicted redshift.}
 \end{figure}
 
-The original spectrum (represented in black) is used to verify the physical accuracy of the synthesis, although its availability is strictly restricted to those sources belonging to the data catalog available in this project. Since the reverse diffusion process is probabilistic in nature, the generation is executed by initializing the sampling process with three different pseudorandom seeds to obtain three independent spectral realizations (represented in different colors). This multiplicity of seeds allows evaluating the physical variance or intrinsic uncertainty of the synthesis on the shape of the continuum and the relative intensity of the emission lines, confirming that the model performs a consistent sampling of the posterior conditional probability density of the astrophysical manifold.
+To validate the performance and consistency of the latent diffusion model, \cref{fi:ap:diff} shows a qualitative comparison between the original DESI spectrum and the synthetic reconstructions obtained from the corresponding Euclid image cutout.
+
+The original spectrum (represented in black) is used to verify the physical accuracy of the synthesis, although its availability is strictly restricted to those sources belonging to the data catalog available in this project. Since the reverse diffusion process is probabilistic in nature, the generation is executed by initializing the sampling process with three different pseudorandom seeds to obtain three independent spectral realizations (represented in different colors). This multiplicity of seeds allows us to evaluate the physical variance or intrinsic uncertainty of the synthesis on the shape of the continuum and the relative intensity of the emission lines, confirming that the model performs a consistent sampling of the posterior conditional probability density of the astrophysical manifold.
 
 In \cref{fi:ap:dif_good}, it can be seen that in the ranges $6500$--$7000\,\text{\AA{}}$ and $8000$--$9000\,\text{\AA{}}$ the generated lines resemble the original spectrum. The discrepancy in positions is due to the difference between the real redshift $0.3367$ and the predicted one $0.2626$. However, for the object in \cref{fi:ap:dif_bad}, the results are not satisfactory. This demonstrates that, although it is a promising method for generating synthetic spectra, it is still necessary to refine both the \textit{AstroPT MM} model from which the generative training departs and the \textit{\gls{LDM}} itself. This is therefore left as a future project to be pursued.

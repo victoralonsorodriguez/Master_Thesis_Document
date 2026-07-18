@@ -6,11 +6,11 @@ This section describes the origin of the astronomical data used, the computation
 
 \subsection{Initial Data Sample}
 
-The dataset for this thesis is constructed from the intersection of two of the most significant cosmological surveys of the decade: the \textit{Euclid} space mission of the \gls{ESA} \autocite{ar:mellier-2024} and the \textit{\gls{DESI}} spectroscopic survey \autocite{ar:desi-early-release}.
+The initial dataset for this thesis is constructed from the intersection of two of the most significant cosmological surveys of the decade: the \textit{Euclid} space mission of the \gls{ESA} (DR1) and the \textit{\gls{DESI}} spectroscopic survey (DESI DR1, \autocite{ar:desi-early-release,ar:desi-dr1-2026}).
 
 \subsubsection{Individual Selection Criteria}
 
-The initial object selection was performed by identifying the regions of direct spatial overlap between the wide-field and deep-field data releases from the first year of \textit{Euclid} (MER DR1) and the first year of \textit{\gls{DESI}} (DESI DR1). The following quality filters were applied in parallel to the raw catalogs of both surveys:
+The following quality filters were applied in parallel to the raw catalogs of both surveys:
 
 \begin{enumerate}
 \item \textbf{Quality filters on \textit{\gls{DESI}} DR1:}
@@ -22,7 +22,7 @@ The initial object selection was performed by identifying the regions of direct 
     \item \texttt{Z > 0}: Limits the sample to sources with positive cosmological redshifts ($z$).
     \end{itemize}
 
-\item \textbf{Quality filters on Euclid MER DR1:}
+\item \textbf{Quality filters on Euclid DR1:}
     \begin{itemize}
     \item \texttt{VIS\_DET == 1}: Requires unambiguous detection of the source in the reference image of the visible (VIS) channel of \textit{Euclid} \autocite{ar:cropper-2024}.
     \item \texttt{spurious\_prob < 0.2}: Filters spurious detections produced by noise or local optical artifacts with a strict probability threshold.
@@ -59,29 +59,6 @@ For each object, image cutouts were generated centered on their astronomical coo
 
 Since the nominal pixel scale of the VIS instrument is exactly $0.1$ arcseconds per pixel ($0.1''/\text{pixel}$) \autocite{ar:cropper-2024}, each $224 \times 224$ pixel cutout spans an effective field of view of $22.4'' \times 22.4''$. For the near-infrared NISP channel, whose native observations have a pixel scale of $0.3''/\text{pixel}$ \autocite{ar:jahnke-2025}, the images were bicubically interpolated and resampled onto the visible channel grid ($0.1''/\text{pixel}$). This ensures that all four bands of each cutout share the same matrix dimensions ($224 \times 224$ pixels) and precisely cover the same spatial extent of the sky ($22.4'' \times 22.4''$).
 
-\subsection{Data Storage Format}
-
-The efficient storage and processing of hundreds of thousands of high-resolution spectral pairs and multi-band image cutouts represents a significant challenge in \textit{\gls{HPC}} environments. Traditional astronomical file storage formats (such as individual binary FITS tables) introduce bottlenecks in the input/output (I/O) data transfer rate due to the latency involved in performing concurrent random reads of millions of small files on disk.
-
-To mitigate this I/O limitation, the dataset was serialized in columnar \textit{Apache Arrow} format using the \textit{Hugging Face Datasets} library. This paradigm offers the following architectural advantages:
-
-\begin{enumerate}
-\item \textbf{High-Speed Sequential Reading:} Groups images and spectra into large memory-mapped files, enabling continuous reads at speeds approaching the physical limit of SSD/NVMe storage.
-\item \textbf{Zero-Copy Serialization:} \textit{Apache Arrow} allows the byte arrays loaded into host RAM to be shared directly with the \textit{PyTorch} data loading subprocesses (dataloaders) without requiring memory duplication, reducing RAM consumption.
-\item \textbf{Efficient Random Access:} Enables shuffling of samples during pretraining on the \glspl{GPU} instantaneously without suffering penalties from random disk access.
-\end{enumerate}
-
-\subsubsection{Dataset Partitioning}
-
-The consolidated dataset in \textit{Apache Arrow} format was randomly divided into two independent partitions for model pretraining and validation, using a fixed pseudorandom seed to ensure experimental reproducibility:
-
-\begin{itemize}
-\item Pretraining set (train split): $202\,196$ objects ($80\%$).
-\item Validation and test set (test split): $50\,548$ objects ($20\%$).
-\end{itemize}
-
-This partition totals $252\,744$ image-spectrum pairs that were indexed in the \textit{Hugging Face Datasets} columnar format.
-
 \subsection{Image Anomaly Filtering (Euclid)}
 
 Despite the stringent restrictions applied during the crossmatching stage, massive astronomical catalogs inevitably contain undocumented instrumental anomalies. To identify and remove potential optical or readout corruptions in the \textit{Euclid} VIS and NISP image cutouts, an astronomical flux analysis module was designed and implemented.
@@ -108,50 +85,33 @@ The resulting integrity analysis log yielded the following statistics on the sam
 
 The audit identified a cumulative total of $18\,800$ images with null-flux anomalies. The identifiers of these objects were recorded in an exclusion list for subsequent removal.
 
-The conditional probability analysis of these anomalies revealed that there was no clear mathematical correlation between the default quality indicators of the \textit{Euclid} database (such as \texttt{det\_quality\_flag} or \texttt{spurious\_flag}) and the occurrence of null-flux cutouts. For example, the probability that an image was completely black given that it had been photometrically classified as free of photometric anomalies (\texttt{det\_quality\_flag == 0}) was $4.99\%$ ($8\,389$ out of $168\,127$), while the conditional probability for objects free of spurious detections (\texttt{spurious\_flag == 0}) was $4.94\%$. This demonstrates that the catalog indicators do not capture the physical absence of data in the locally cropped images, justifying the need for a pixel-level audit to purge the pretraining set.
+The conditional probability analysis of these anomalies revealed that there was no clear mathematical correlation between the default quality indicators of the \textit{Euclid} database (such as \texttt{det\_quality\_flag} or \texttt{spurious\_flag}) and the occurrence of null-flux cutouts. For example, the probability that an image was completely black given that it had been photometrically classified as free of photometric anomalies (\texttt{det\_quality\_flag == 0}) was $4.99\%$ ($8\,389$ out of $168\,127$), while the conditional probability for objects free of spurious detections (\texttt{spurious\_flag == 0}) was $4.94\%$. This demonstrates that the catalog indicators do not capture the physical absence of data in the locally cropped images, justifying the need for a pixel-level audit to purge the dataset.
 
 \subsection{Final Pretraining Catalog Filtering}
 
 To consolidate the final catalog and ensure physically consistent pretraining, a metadata filtering pipeline was executed on the combined FITS-format catalog of $252\,750$ records.
 
-\subsubsection{Layer 1: Adaptive Spectral SNR Criterion (DESI)}
-
-The first filtering layer was applied to the \textit{\gls{DESI}} spectra. The primary objective is to eliminate spectra with high levels of instrumental noise that could degrade the optimization of the contrastive or autoregressive loss function.
-
-An adaptive logical condition based on the spectroscopic redshift ($z$) of the object was designed. Each of the ten cryogenic spectrographs of \textit{\gls{DESI}} is equipped with three cameras that spectrally divide the total optical range from $3600$ to $9800\,\text{\AA{}}$: the blue camera ($B$, $3600\text{--}5930\,\text{\AA{}}$), the red camera ($R$, $5660\text{--}7720\,\text{\AA{}}$), and the near-infrared camera ($Z$, $7470\text{--}9800\,\text{\AA{}}$) \autocite{ar:abareshi-2022}. For low redshifts ($z$), the main atomic emission lines of cosmological interest (such as the hydrogen recombination line H$\alpha$ at $6563\,\text{\AA{}}$ and the forbidden transition doublet $\left[\text{N\,II}\right]\,\lambda\lambda 6548, 6584\,\text{\AA{}}$) fall within the wavelength window covered by the red channel ($R$ camera). As the object has an intermediate or high redshift ($z \ge 0.15$), these emission lines undergo a cosmological redshift that displaces them toward the near-infrared channel covered by the $Z$ camera of \textit{\gls{DESI}}.
-
-Mathematically, we define the spectrum acceptance condition using the logical expression:
+\paragraph{Phase 1: Adaptive Spectral SNR Criterion (DESI)} To eliminate noisy spectra that degrade loss optimization, a redshift-adaptive filter was applied to \textit{\gls{DESI}} data. For low-$z$ objects, key emission lines (e.g., $\text{H}\alpha$ and $\left[\text{N\,II}\right]$) fall in the red camera ($R$). For $z \ge 0.15$, cosmological redshift shifts them to the near-infrared $Z$ camera. Mathematically, the spectrum acceptance condition is:
 
 \begin{equation}
 \text{SNR Filter} = \left( \left(z < 0.15\right) \wedge \left(\text{SNR\_SPEC\_R} > 3.0\right) \right) \vee \left( \left(z \ge 0.15\right) \wedge \left(\text{SNR\_SPEC\_Z} > 3.0\right) \right)
 \label{eq:filtro_snr}
 \end{equation}
 
-where \texttt{SNR\_SPEC\_R} and \texttt{SNR\_SPEC\_Z} represent the average \textit{\gls{SNR}} measured on the detectors of the $R$ and $Z$ cameras of \textit{\gls{DESI}}, respectively.
+where \texttt{SNR\_SPEC\_R} and \texttt{SNR\_SPEC\_Z} are the average \textit{\gls{SNR}} in the $R$ and $Z$ cameras. This filter accepted $145\,660$ objects ($57.6\%$) and rejected $107\,090$ objects ($42.4\%$) from the initial catalog.
 
-The impact of this filter on the catalog of $252\,750$ sources was as follows:
-
-\begin{itemize}
-\item Accepted objects (high $\text{S/N}$): $145\,660$ ($57.6\%$).
-\item Rejected objects (low $\text{S/N}$): $107\,090$ ($42.4\%$).
-\end{itemize}
-
-\subsubsection{Layer 2: Corrupt Image Exclusion (Euclid)}
-
-Once the sample of $145\,660$ objects with scientific-quality spectroscopy was obtained, the second purging layer was applied by crossmatching these records against the exclusion list of corrupt \textit{Euclid} images generated during the pixel audit ($18\,800$ objects).
-
-This crossmatch identified that $7\,999$ objects that had passed the spectral  \gls{SNR} filter had corrupt image cutouts in \textit{Euclid}, and they were therefore permanently discarded.
+\paragraph{Phase 2: Corrupt Image Exclusion (Euclid)} The $145\,660$ objects with scientific-quality spectroscopy were crossmatched against the $18\,800$ corrupt \textit{Euclid} images identified during the pixel audit. This discarded $7\,999$ objects that had passed the spectral \gls{SNR} filter but possessed defective image cutouts.
 
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=\textwidth]{target_diagnostic_39633516366922547.png}
+	\includegraphics[width=\textwidth]{target_diagnostic_39627829519845965}
 	\caption[Example of one of the objects in the dataset]{Visualization of one of the objects that make up the dataset. In the top center, the false-color image from \textit{Euclid} is shown. The color processing follows the methodology proposed by \textcite{ar:lupton-2004} for the \textit{\gls{SDSS}} but adapted to the four channels of \textit{Euclid}. On the top sides, different galaxy properties are displayed. At the bottom, divided into two channels, the spectrum obtained by the \textit{\gls{DESI}} spectrographs is shown. Some of the spectral lines used as references throughout the project are plotted.}
 	\label{fi:galaxy_bimodal_sample}
 \end{figure}
 
 
-\subsubsection{Final Clean Catalog Consolidation}
+\paragraph{Final Clean Catalog Consolidation}
 
 After sequentially applying the \textit{\gls{DESI}} spectral \gls{SNR} filter and the \textit{Euclid} image quality rejection, the final clean catalog was consolidated to $\mathbf{137\,661}$ unique galaxy image-spectrum pairs. This final catalog represents a net retention of $54.5\%$ relative to the initial overlap sample and was consolidated into a unified binary FITS file.
 
@@ -159,9 +119,25 @@ This clean catalog of $137\,661$ objects constitutes the optimal statistical fou
 
 It is important to note that in diagnostic analyses performed after the consolidation of this sample, a minor subset of \textit{Euclid} images was detected that exhibited morphological corruptions due to a physical misalignment in the registration of the filters (VIS versus NISP). These sources retain non-null pixel values across all their bands and consequently evade automatic detection by the flux analysis algorithm, which only searches for null or black values. However, it was intentionally decided not to purge these objects from the final catalog. The rationale behind this decision lies in the desire to train the foundation model \textit{AstroPT} under realistic and non-idealized observational conditions, forcing it to latently isolate chromatic misalignments and instrumental domain imperfections as intrinsic anomalies or artifacts, thereby dispensing with destructive preprocessing or excessively restrictive manual filtering.
 
+\subsubsection{Origin and Determination of Reference Values}
+
+The establishment of reference values (\textit{ground truth}) for each of the physical parameters in our consolidated catalog is based on the synergistic integration of the official \glspl{VAC} and data releases from both surveys.
+
+\paragraph{Structural and Photometric Data (\textit{Euclid} DR1):}                                                                                                                      
+	The analytical geometric parameters ($R_{\text{eff}}$, $n_{\text{Sersic}}$, and $q$) are directly queried from the official photometric catalog of the \textit{Euclid} DR1. These structural parameters were computed by the \textit{Euclid} Consortium pipeline through two-dimensional analytical Sérsic brightness profile fitting on the visible VIS band images, utilizing morphological extraction algorithms such as \textit{SExtractor} \autocite{ar:bertin-1996} or \textit{GALFIT} \autocite{ar:peng-2002}. 
+	
+	The non-parametric morphology metrics (Gini and smoothness) are also extracted from the DR1 catalogs, derived from automated morphometry codes. The qualitative morphological tracers (e.g., the probability of possessing spiral arms, \texttt{has\_spiral\_arms\_yes}) are sourced from the Galaxy Zoo DESI \gls{VAC} \autocite{ar:walmsley-2023}, where convolutional networks assigned probabilities to each source.
+	
+\paragraph{Spectroscopic and Integrated Data (\textit{DESI} DR1 VACs):} 
+	The integrated physical and kinematic properties are strictly retrieved from the official \glspl{VAC} of the \textit{DESI} First Data Release (DR1) \autocite{ar:desi-early-release,ar:desi-dr1-2026,ar:siudek-2024}. 
+	
+	Specifically, the stellar physical properties ($\log M_*$ and $\log \text{\gls{SFR}}$) are extracted from the physical properties \gls{VAC} \autocite{ar:siudek-2024}. In their pipeline, these parameters are estimated via the \textit{CIGALE} \autocite{ar:boquien-2019} code, which performs a spectrophotometric synthesis fit combining the high-resolution spectrum of \textit{DESI} with broadband optical photometry from the Legacy Surveys \autocite{ar:dey-2019} supplemented by mid-infrared photometry from \textit{\gls{WISE}}\autocite{ar:wright-2010}.
+	
+	The fluxes and equivalent widths of the spectroscopic emission lines ($F(\text{H}\alpha)$, $F(\text{H}\beta)$, etc.) and the gas kinematics ($\sigma_{[\text{O\,III}]}$) are sourced from the \textit{FastSpecFit} \gls{VAC} \autocite{ar:moustakas-2023}. The \textit{FastSpecFit} automated pipeline models the stellar continuum using high-resolution templates and applies simultaneous Gaussian fits to the emission lines, providing robust measurements that correct for internal dust attenuation and stellar atmospheric absorption.
+
 \subsection{Reference Physical Parameters and Ground Truth} \label{sec:dat:params}
 
-To quantitatively evaluate the physical information content encoded in the latent representations obtained during multimodal pretraining, a set of $16$ fundamental astrophysical parameters was selected. These parameters serve as target variables in the linear and nonlinear regression tests whose results will determine the quality and performance of the models described in \cref{sec:dev}. A brief description of each of these parameters follows.
+To quantitatively evaluate the physical information encoded in the latent representations obtained during multimodal pretraining, a set of $16$ fundamental astrophysical parameters was selected. These parameters serve as target variables in the regression tests determining the quality of the models described in \cref{sec:dev}. It is critical to emphasize that these parameters are exclusively derived from the official data releases and \glspl{VAC} of the \textit{Euclid} and \textit{\gls{DESI}} pipelines; they are not computed locally, but act as our absolute empirical ground truth. A brief description of each parameter follows.
 
 \subsubsection{Structural and Photometric Data}
 
@@ -172,7 +148,7 @@ To quantitatively evaluate the physical information content encoded in the laten
 	\item \textbf{Gini coefficient ($G$, column \texttt{gini}):} A non-parametric statistical measure of luminous inequality. It quantifies the degree of uniformity or homogeneity in the distribution of luminous flux among the galaxy's pixels. Values close to $1$ indicate strong luminous concentration in a few pixels (for example, compact bulges or active galactic nuclei), while low values reflect dispersed and uniform brightness.
 	\item \textbf{Photometric smoothness or clumpiness (Smoothness, $S$, column \texttt{smoothness}):} A non-parametric metric that measures the fraction of light associated with small-scale discrete structures. It is calculated by subtracting a low-pass filtered smoothed version from the original image, revealing young stellar clusters and active peripheral H II regions.
 	\item \textbf{Spiral arms fraction (column \texttt{has\_spiral\_arms\_yes}):} A non-parametric fraction obtained from convolutional classifiers trained on galaxy morphology, measuring the conditional probability that the galaxy exhibits active and structured spiral arms in the visual cutout.
-	\item \textbf{Detection photometric flux (\texttt{flux\_detection\_total}):} A tracer of the integrated apparent brightness measured in the VIS band of \textit{Euclid}, expressed in microjanskys ($\mu\text{Jy}$), representative of the total detection flux.
+	\item \textbf{Detection photometric flux (\texttt{flux\_detection\_total}):} The integrated apparent brightness measured in the \textit{Euclid} VIS band, expressed in microjanskys ($\mu\text{Jy}$), representing the total detection flux.
 \end{itemize}
 
 \subsubsection{Spectroscopic and Integrated Parameters}
@@ -184,13 +160,12 @@ To quantitatively evaluate the physical information content encoded in the laten
 	
 	\item \textbf{Star Formation Rate (\textit{log \gls{SFR}}, column \texttt{LOGSFR}):} The rate at which the galaxy transforms its cold molecular gas into new stars, expressed in logarithm of solar masses per year ($\log M_\odot/\text{yr}$).
 	
-	\textit{Note on the physical classification of SFR:} Although the star formation rate has a close spatial morphological correspondence with the regions of young, blue stellar light in the spiral arms of broadband images, in this work it is formally classified as a \textbf{spectroscopic or integrated physical parameter}. This is because its most direct, robust, and instantaneous empirical calibrator (operating on timescales of $\sim 10\text{--}100\,\text{Myr}$) is nebular gas emission, and in particular the luminosity of the hydrogen recombination line $\text{H}_\alpha$ at $6563\,\text{\AA{}}$, which is excited by the intense ultraviolet radiation from massive young O- and B-type stars in the surrounding H II regions. Its rigorous quantification is therefore based on emission line spectroscopy.
 	
-	\item \textbf{$\text{H}_\alpha$ line flux ($F(\text{H}_\alpha)$, column \texttt{HALPHA\_FLUX}):} Integrated flux of the Balmer hydrogen recombination line $\text{H}_\alpha$ at $6563\,\text{\AA{}}$, expressed in standard units of $10^{-17}\,\text{erg}\,\text{s}^{-1}\,\text{cm}^{-2}$.
+	\item \textbf{$\text{H}\alpha$ line flux ($F(\text{H}\alpha)$, column \texttt{HALPHA\_FLUX}):} Integrated flux of the Balmer hydrogen recombination line $\text{H}\alpha$ at $6563\,\text{\AA{}}$, expressed in standard units of $10^{-17}\,\text{erg}\,\text{s}^{-1}\,\text{cm}^{-2}$.
 	
-	\item \textbf{$\text{H}_\alpha$ equivalent width ($EW(\text{H}_\alpha)$, column \texttt{HALPHA\_EW}):} The ratio of the integrated emission line flux of $\text{H}_\alpha$ normalized by the flux density of the surrounding stellar continuum, expressed in Angstroms ($\text{\AA{}}$). It is indicative of the specific star formation rate.
+	\item \textbf{$\text{H}\alpha$ equivalent width ($EW(\text{H}\alpha)$, column \texttt{HALPHA\_EW}):} The ratio of the integrated emission line flux of $\text{H}_\alpha$ normalized by the flux density of the surrounding stellar continuum, expressed in Angstroms ($\text{\AA{}}$). It is indicative of the specific star formation rate.
 	
-	\item \textbf{$\text{H}_\beta$ line flux ($F(\text{H}_\beta)$, column \texttt{HBETA\_FLUX}):} Integrated flux of the Balmer recombination line $\text{H}_\beta$ at $4861\,\text{\AA{}}$, expressed in standard units of $10^{-17}\,\text{erg}\,\text{s}^{-1}\,\text{cm}^{-2}$. It is crucial for correcting internal interstellar absorption and dust reddening through the Balmer decrement.
+	\item \textbf{$\text{H}\beta$ line flux ($F(\text{H}\beta)$, column \texttt{HBETA\_FLUX}):} Integrated flux of the Balmer recombination line $\text{H}_\beta$ at $4861\,\text{\AA{}}$, expressed in standard units of $10^{-17}\,\text{erg}\,\text{s}^{-1}\,\text{cm}^{-2}$. It is crucial for correcting internal interstellar absorption and dust reddening through the Balmer decrement.
 	
 	\item \textbf{$[\text{N\,II}]\,\lambda 6584$ line flux ($F([\text{N\,II}])$, column \texttt{NII\_6584\_FLUX}):} Flux of the forbidden atomic transition of singly ionized nitrogen, expressed in standard units of $10^{-17}\,\text{erg}\,\text{s}^{-1}\,\text{cm}^{-2}$. It is sensitive to the metallicity of the ionized gas and to non-stellar ionization mechanisms, such as those produced by \textit{\glspl{AGN}}.
 	
@@ -199,18 +174,25 @@ To quantitatively evaluate the physical information content encoded in the laten
 	\item \textbf{$[\text{O\,III}]\,\lambda 5007$ velocity dispersion ($\sigma_{[\text{O\,III}]}$, column \texttt{OIII\_5007\_SIGMA}):} Doppler spectral width of the $[\text{O\,III}]$ line, expressed in kilometers per second ($\text{km}\,\text{s}^{-1}$), which measures the turbulent kinematics and velocity dispersion of the nuclear ionized gas induced by outflows or by the central gravitational potential of the galaxy.
 \end{itemize}
 
-\subsubsection{Origin and Determination of Reference Values}
+\subsection{Data Storage Format}
 
-The establishment of reference values (\textit{ground truth}) for each of the physical parameters in our consolidated catalog is based on the synergistic integration of the official \glspl{VAC} and direct observations from both surveys:
+The efficient storage and processing of hundreds of thousands of high-resolution spectral pairs and multi-band image cutouts represents a significant challenge in \textit{\gls{HPC}} environments. Traditional astronomical file storage formats (such as individual binary FITS tables) introduce bottlenecks in the input/output (I/O) data transfer rate due to the latency involved in performing concurrent random reads of millions of small files on disk.
+
+To mitigate this I/O limitation, the dataset was serialized in columnar \textit{Apache Arrow} format using the \textit{Hugging Face Datasets} library. This paradigm offers the following architectural advantages:
+
+\begin{enumerate}
+	\item \textbf{High-Speed Sequential Reading:} Groups images and spectra into large memory-mapped files, enabling continuous reads at speeds approaching the physical limit of SSD/NVMe storage.
+	\item \textbf{Zero-Copy Serialization:} \textit{Apache Arrow} allows the byte arrays loaded into host RAM to be shared directly with the \textit{PyTorch} data loading subprocesses (dataloaders) without requiring memory duplication, reducing RAM consumption.
+	\item \textbf{Efficient Random Access:} Enables shuffling of samples during pretraining on \glspl{GPU} instantaneously without suffering penalties from random disk access.
+\end{enumerate}
+
+\subsubsection{Dataset Partitioning}
+
+The consolidated dataset in \textit{Apache Arrow} format was randomly divided into two independent partitions for model pretraining and validation, using a fixed pseudorandom seed to ensure experimental reproducibility:
 
 \begin{itemize}
-	\item \textbf{Structural and Photometric Data (\textit{Euclid} MER DR1):} 
-	The analytical geometric parameters ($R_{\text{eff}}$, $n_{\text{Sersic}}$, and $q$) are derived from the official photometric catalog of the \textit{Euclid} database (MER DR1, \autocite{ar:romelli-2025}). These structural parameters were obtained through two-dimensional analytical Sérsic brightness profile fitting on the pixels of high-resolution images in the visible VIS band, using scientific algorithms such as \textit{SExtractor} \autocite{ar:bertin-1996} or \textit{GALFIT} \autocite{ar:peng-2002}. 
-	
-	The non-parametric morphology metrics (Gini and smoothness) were obtained using automated morphometry codes applied directly to the local flux matrices. Additional qualitative non-parametric morphological tracers, such as the probability of possessing spiral arms (\texttt{has\_spiral\_arms\_yes}), are derived from convolutional morphological classification models trained on the Galaxy Zoo DESI catalog \autocite{ar:walmsley-2023}.	
-	
-	\item \textbf{Spectroscopic and Integrated Data (\textit{DESI} DR1):} 
-	The integrated physical and kinematic properties are obtained from the official \glspl{VAC} of the first public data release of \textit{DESI} (DR1) \autocite{ar:desi-early-release,ar:desi-dr1-2026}. Specifically, the stellar physical properties ($\log M_*$ and $\textit{log \gls{SFR}}$) are derived through stellar population spectrophotometric synthesis fitting codes using spectral evolution models and fitting codes such as \textit{Portsmouth} \autocite{ar:maraston-2013} and the \textit{CIGALE} pipeline \autocite{ar:boquien-2019}. These algorithms perform least-squares fitting of the spectral energy distribution by combining the high-resolution spectrum of \textit{DESI} ($3600\text{--}9824\,\text{\AA{}}$) with broadband optical photometry from the Legacy Surveys \autocite{ar:dey-2019}. The fit determines the mass and star formation rate from the star formation history fitting with theoretical simple stellar population templates under different metallicities and interstellar dust extinction indices.
-	
-	The fluxes and equivalent widths of the spectroscopic emission lines ($F(\text{H}_\alpha)$, $F(\text{H}_\beta)$, etc.) and the gas kinematics ($\sigma_{[\text{O\,III}]}$) were measured using the automated \textit{DESI} spectroscopic pipeline. This pipeline performs subtraction of the stellar continuum fitted with high-resolution spectral templates and applies simultaneous Gaussian fits to the emission lines, controlling the effects of stellar atmospheric absorption on the Balmer lines.
+	\item Pretraining set (train split): $202\,196$ objects ($80\%$).
+	\item Validation and test set (test split): $50\,548$ objects ($20\%$).
 \end{itemize}
+
+This partition totals $252\,744$ image-spectrum pairs that were indexed in the \textit{Hugging Face Datasets} columnar format.

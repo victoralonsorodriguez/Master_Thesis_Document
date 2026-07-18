@@ -16,11 +16,11 @@
 		\caption{Nearest neighbors for a spiral galaxy.}
 		\label{fi:ap:sim}
 	\end{subfigure}
-	\caption[Nearest neighbor search results for two objects]{Visualization of nearest neighbors retrieved by the similarity engine of \textit{AstroPT MM}. After the first column, which shows the query object, the columns from left to right display the first neighbor in the image, spectral, and joint modalities, respectively. In \textbf{(a)}, the query object is one of the four \textit{dual \glspl{AGN}} available in the project dataset. One can verify that the search engine retrieves neighbors with similar morphology and spectrum. In \textbf{(b)}, the first neighbors in each modality are shown for a spiral galaxy. The first spectral neighbor differs morphologically, being an elliptical galaxy. This behavior is expected, since the spectral latent space is ordered by prioritizing spectroscopic features. This is precisely why the use of the joint modality, shown in the final column, is fundamental: it is capable of retrieving a spiral galaxy with a spectrum similar to that of the query galaxy.}
+	\caption[Nearest neighbor search results for two objects]{Visualization of nearest neighbors retrieved by the similarity engine of \textit{AstroPT MM}. After the first column, which shows the query object, the columns from left to right display the first neighbor in the image, spectral, and joint modalities, respectively. In \textbf{(a)}, the query object is one of the four \textit{dual \glspl{AGN}} available in the project dataset. One can observe that the search engine retrieves neighbors sharing related morphology and global continuum trends in their spectra. In \textbf{(b)}, the first neighbors in each modality are shown for a spiral galaxy. The first spectral neighbor differs morphologically, being an elliptical galaxy. This behavior is expected, since the spectral latent space is ordered by prioritizing spectroscopic features. This is precisely why the use of the joint modality, shown in the final column, is fundamental: it is capable of retrieving a spiral galaxy with spectral properties that partially resemble those of the query galaxy.}
 	\label{fi:ap_similarity}
 \end{figure}
 
-This appendix describes in detail the mathematical formulation, algorithmic workflows, and astrophysical validation cases of the unsupervised similarity search engine developed from the latent representations of \textit{AstroPT MM}. This engine constitutes an unsupervised data mining tool capable of operating on any of the model's representation spaces (visual, spectral, or joint) to retrieve physical analogies or identify atypical astrophysical systems in massive catalogs.
+This appendix describes in detail the mathematical formulation, algorithmic workflows, and astrophysical validation cases of the unsupervised similarity search engine developed from the latent representations of \textit{AstroPT MM}. It is important to emphasize that this search engine is currently presented as an \textbf{experimental} prototype. While it constitutes a promising unsupervised data mining tool capable of operating on the model's representation spaces to retrieve partially related physical analogs, definitive scientific conclusions cannot yet be drawn from its preliminary neighbor selections. In particular, visual inspection of the retrieved spectral neighbors reveals that they share macroscopic continuum trends rather than identical fine-grained absorption or emission features. The robustness and resolution of this similarity engine are expected to improve significantly in future iterations as the structure of the latent space is further refined and scaled.
 
 \subsection{Mathematical Formulation}
 
@@ -31,7 +31,7 @@ S_c(\mathbf{q}, \mathbf{h}_i) = \frac{\mathbf{q} \cdot \mathbf{h}_i}{\|\mathbf{q
 \label{eq:ap_cosine}
 \end{equation}
 
-The $k$-nearest neighbor ($k$-NN) search problem consists in finding the subset of indices $I_k(\mathbf{q}) \subset \{1, \dots, N\}$ of size $k$ that maximizes the similarity:
+The $k$-nearest neighbor ($k$-NN) search problem consists of finding the subset of indices $I_k(\mathbf{q}) \subset \{1, \dots, N\}$ of size $k$ that maximizes the similarity:
 
 \begin{equation}
 I_k(\mathbf{q}) = \arg\max_{I, |I|=k} \sum_{i \in I} S_c(\mathbf{q}, \mathbf{h}_i)
@@ -82,7 +82,7 @@ The similarity engine is designed to adapt to the query data availability. If th
 
 \subsection{Case Studies: Dual AGNs}
 
-The identification of \textit{dual \glspl{AGN}} harboring two supermassive black holes in an active accretion phase in their central regions, is one of the greatest challenges in extragalactic astrophysics. This scenario requires simultaneously confirming two complex signatures: the presence of a spatially resolved double bright nucleus (morphology) and a spectrum exhibiting broadened forbidden emission lines or Doppler double-peaked profiles induced by the orbital kinematics of the central mass sinks. The nearest neighbor search from these objects yielded the following information:
+The identification of \textit{dual \glspl{AGN}} harboring two supermassive black holes in an active accretion phase in their central regions is one of the greatest challenges in extragalactic astrophysics. This scenario requires simultaneously confirming two complex signatures: the presence of a spatially resolved double bright nucleus (morphology) and a spectrum exhibiting broadened forbidden emission lines or Doppler double-peaked profiles induced by the orbital kinematics of the central mass sinks. The nearest neighbor search from these objects yielded the following information:
 
 \begin{itemize}
 	\item \textbf{Limit due to critical data volume:} The analysis of these objects presents, in the current context of this project, major challenges, since the total dataset contains only four known candidates for this type of object. Therefore, the model lacks sufficient statistical references to autonomously conceptualize the physical signature of a \textit{dual \gls{AGN}}. Consequently, the tool does not act as a direct classifier, but rather as a \textbf{candidate generator} for subsequent high-resolution imaging and spectroscopic studies.

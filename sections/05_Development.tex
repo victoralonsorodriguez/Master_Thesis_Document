@@ -4,31 +4,6 @@
 
 All the code used to develop this project is accessible through the public repository \url{https://github.com/victoralonsorodriguez/astroPT}. The model developed in this work builds upon the unimodal foundation of \textit{AstroPT} presented in \textcite{ar:astropt}, and from this point onward we will differentiate it by naming it \textbf{AstroPT MM} (AstroPT Multi-Modal).
 
-\subsection{Computing Resources}
-
-The development of \textit{\glspl{MFM}} in astrophysics demands massive supercomputing infrastructure. Unlike the pretraining of small models, pretraining foundation models requires concurrently scaling the model parameters, the datasets, and the computational capacity in \textit{\gls{FLOPS}}, following strict scaling laws.
-
-\cref{tab:comparacion_modelos} compares the model parameters, data scale, and hardware demands of the pretraining of \textit{AstroPT MM} against other foundation models from the recent astrophysics literature: \textit{AstroCLIP} \autocite{ar:astroclip}, \textit{AION-1} \autocite{ar:aion-1}, and \textit{AstroPT} \autocite{ar:astropt}.
-
-The computing capacity for this work was provided by the \textit{TeideHPC} infrastructure \autocite{ar:teidehpc}. Although the initial computational cost of pretraining is high, the resulting model can be employed in various \textit{downstream tasks} without the need to train its layers from scratch. This optimizes resource consumption in subsequent experiments compared to the repeated pretraining of independent supervised models.
-
-\begin{table}[H]
-	\centering
-	\caption[Technical comparison of current foundation models for astronomy]{Technical comparison of model size by number of parameters, number of objects in the pretraining dataset, hardware used for pretraining, and estimated pretraining time.}
-	\label{tab:comparacion_modelos}
-	\begin{tabularx}{\textwidth}{l C C C C}
-		\toprule
-		\textbf{Metric} & \textbf{AstroCLIP} & \textbf{AION-1} & \textbf{AstroPT} & \textbf{AstroPT MM} \\ 
-		\midrule
-		\textbf{Number of parameters} & $\sim 150\ \si{M}$ & $300\ \si{M}\ \text{to}\ 3.1\ \si{B}$ & $1\ \si{M}\ \text{to}\ 2.1\ \si{B}$ & $\sim 100.75\ \si{M}$ \\ 
-		\textbf{Dataset} & $1.5\ \si{M}\ \text{Pairs}$ & $200\ \si{M}\ \text{Objects}$ & $8.6\ \si{M}\ \text{Images}$ & $137\,661\ \text{Pairs}$ \\ 
-		\textbf{Hardware (\glspl{GPU})} & $16 \times \text{H100} $ & $288\times \text{H100}$ &  & $4 \times \text{A100} $ \\
-		\textbf{Pretraining time} & $48\ \si{h}$ & $3.5\ \si{d}$ & & $36\ \si{h}$   \\ 
-		\bottomrule
-	\end{tabularx}
-\end{table}
-
-
 \subsection{Physical Preprocessing}\label{sec:dev:inter}
 
 One of the critical phases in preparing the pretraining images consisted in normalizing the spatial scale of the galaxies. To this end, an interpolation and resampling procedure was applied to the \textit{Apache Arrow} format partitions of the dataset. This process dynamically scales each cutout based on its effective Sérsic radius and axis ratio, ensuring that all objects share a uniform physical and angular size within the images.
@@ -36,7 +11,7 @@ One of the critical phases in preparing the pretraining images consisted in norm
 Mathematically, for each galaxy with identifier \texttt{TARGETID}, a cutout half-width in arcseconds ($\text{arcsec\_cut}$) is calculated from the rescaling formula:
 
 \begin{equation}
-\text{arcsec\_cut} = C \cdot R_e \sqrt{q}
+\text{arcsec\_cut} = C \cdot R_{\text{eff}} \sqrt{q}
 \label{eq:arcsec_cut}
 \end{equation}
 
@@ -48,11 +23,11 @@ where:
 \item $C = 5.0$ is a constant multiplicative factor used to ensure that the galaxy is completely framed within the cutout boundaries, retaining both its core and the diffuse emission from its peripheral regions.
 \end{itemize}
 
-Subsequently, this half-width is converted to pixels on the \textit{Euclid}/VIS grid ($hw = \text{arcsec\_cut} / 0.1$). The algorithm crops the corresponding submatrix of size $2hw \times 2hw$ pixels and resizes it back to the standard $224 \times 224$ pixel matrix using interpolation algorithms with active anti-aliasing filters to mitigate sampling effects. By applying this normalization, the effective radius of all galaxies in the dataset is fixed at exactly $224 / \left(2 C\right) = 22.4$ pixels along their semi-major axis, achieving a homogeneous spatial representation.
+Subsequently, this half-width is converted to pixels on the \textit{Euclid} VIS grid ($hw = \text{arcsec\_cut} / 0.1$). The algorithm crops the corresponding submatrix of size $2hw \times 2hw$ pixels and resizes it back to the standard $224 \times 224$ pixel matrix using interpolation algorithms with active anti-aliasing filters to mitigate sampling effects. By applying this normalization, the effective radius of all galaxies in the dataset is fixed at exactly $224 / \left(2 C\right) = 22.4$ pixels along their semi-major axis, achieving a homogeneous spatial representation.
 
 This systematic interpolation introduces a limitation or artificial bias related to the physical and methodological nature of how galactic sizes are defined and measured in observational astrophysics. By normalizing to a constant pixel size, galaxies that have a very small native angular diameter (for example, dwarf galaxies or sources at high redshift ($z$)) are massively magnified in the $224 \times 224$ pixel matrix. This causes them to appear artificially large and exhibit smoothed or pixelated textures due to the lack of information at high spatial frequencies. Conversely, galaxies with large angular size that are well resolved are compressed to much smaller sizes within the cutout, losing small-scale structural details that are absorbed by the pixel averaging during the reduction.
 
-This technical issue arises directly from the limitations of using the effective radius (or half-light radius, $R_e$) as a size metric. As noted in the literature by \textcites{ar:trujillo-2020}{ar:buitrago-2024}, the effective radius is an arbitrary metric based on light concentration (the radius enclosing $50\%$ of the projected luminosity) and depends critically on the intrinsic luminosity and surface brightness limits of the galaxy rather than its actual physical growth boundary. Proposing alternative, physically motivated size measures that do not depend on luminosity (such as the truncation point or the peripheral stellar mass density edge) is essential in deep extragalactic analysis, but difficult to implement in large-scale automated processing schemes due to the need for extremely deep and noise-free images.
+This technical issue arises directly from the limitations of using the effective radius (or half-light radius, $R_{\text{eff}}$) as a size metric. As noted in the literature by \textcites{ar:trujillo-2020}{ar:buitrago-2024}, the effective radius is an arbitrary metric based on light concentration (the radius enclosing $50\%$ of the projected luminosity) and depends critically on the intrinsic luminosity and surface brightness limits of the galaxy rather than its actual physical growth boundary. Proposing alternative, physically motivated size measures that do not depend on luminosity (such as the truncation point or the peripheral stellar mass density edge) is essential in deep extragalactic analysis, but difficult to implement in large-scale automated processing schemes due to the need for extremely deep and noise-free images.
 
 Despite these limitations in the visual representation of individual galaxies, the scientific decision to enforce this interpolation is grounded in the pursuit of scale invariance during the pretraining of \textit{AstroPT MM}:
 
@@ -63,6 +38,29 @@ Despite these limitations in the visual representation of individual galaxies, t
 \end{itemize}
 
 This normalization and invariance approach aligns with recommended practices in the design of equivariant and scale-invariant networks in computer vision \autocite{ar:weiler-2019}, where the goal is to structure feature descriptors that are immune to spatial affine transformations to optimize generalization and robustness against domain shifts.
+
+\subsubsection{Flux Scaling}
+
+At the image pixel level, the dynamic range of astronomical flux is conditioned using the $\text{asinh}$ (inverse hyperbolic sine) transformation developed by \textcite{ar:lupton-1999} to preserve noise linearity at faint fluxes and prevent logarithmic saturation at bright fluxes:
+
+\begin{equation}
+y_i = \text{asinh}\left(\dfrac{x_i - \text{median}}{\beta}\right)
+\label{eq:asinh_transformation}
+\end{equation}
+
+where $x_i$ is the raw flux measured by the detector, $\text{median}$ is the subtracted median sky background, and $\beta$ is the instrumental noise threshold. Analytically, the first derivative of the asinh function with respect to its input is:
+
+\begin{equation}
+\dfrac{d}{dz} \text{asinh}\left(z\right) = \dfrac{1}{\sqrt{z^2 + 1}}
+\label{eq:asinh_derivative}
+\end{equation}
+
+This derivative has optimal properties for training neural networks via backpropagation:
+
+\begin{itemize}
+\item For low fluxes ($z \to 0$), the derivative approaches $1$, meaning the gradient flows linearly without suffering from vanishing gradient, preserving the physics and statistical distribution of the sky background noise.
+\item For high fluxes ($z \gg 1$), the derivative decays as $1/z$, attenuating the impact of extremely bright \textit{\glspl{AGN}} or foreground stars, thus preventing gradient explosion during optimization.
+\end{itemize}
 
 \subsection{Data-to-Token Conversion}
 
@@ -111,33 +109,6 @@ Multiplying this factor by the number of samples in the dataset partitions, we o
     \end{equation}
 \end{itemize}
 
-\subsubsection{Relationship with Model Parameters and Scaling Laws}
-
-According to the initialization and optimizer logs of our model, the \textit{AstroPT MM} architecture has a total of $100\,750\,849$ parameters ($\sim 100.75$ million), broken down as follows:
-
-\begin{itemize}
-\item \texttt{backbone\_decay} (Transformer body parameters with weight decay): $86\,511\,360$ parameters.
-\item \texttt{EuclidImage\_decay} (\textit{Euclid} visual encoder projection): $7\,864\,320$ parameters.
-\item \texttt{DESISpectrum\_decay} (\textit{\gls{DESI}} spectral encoder projection): $6\,352\,896$ parameters.
-\item \texttt{backbone\_nodecay} (Normalization parameters and biases without weight decay): $22\,273$ parameters.
-\end{itemize}
-
-If we compare the number of model parameters ($N \approx 100.75$ million) with the number of tokens in the final clean dataset ($D \approx 215.16$ million), we observe a token-to-parameter ratio of approximately $\mathbf{2.1:1}$.
-
-Under the Chinchilla scaling laws \autocite{ar:hoffmann-2022}, optimal pretraining from scratch requires the number of tokens to be approximately 20 times the number of parameters ($D \approx 20 \cdot N$). For a model with $100.75$ million parameters, this would require a pretraining set of at least $2.01$ billion tokens, meaning that our dataset is in a suboptimal token regime if the goal were to pretrain the entire transformer and its backbone architectures in a classical autoregressive manner from scratch. To reach the optimal regime, a total of $1\,289\,199$ objects with their corresponding image-spectrum pairs would be required.
-
-\subsubsection{Data Volume Justification}
-
-The reason why this token volume does not represent a bottleneck or a violation of the model's generalization requirements is grounded in the following design principles of our architecture:
-
-\begin{enumerate}
-\item \textbf{Alignment and fine-tuning rather than pretraining:} Unlike language foundation models that are trained from scratch in a purely causal mode, our multimodal model focuses on latent representation alignment. The common latent space can be robustly structured with an order of magnitude fewer data samples, since the model does not need to learn to reconstruct complete morphologies or textures from scratch, but rather to associate pre-existing semantic and physical features.
-
-\item \textbf{Physical observational limit of the local universe:} In observational astrophysics, it is not possible to arbitrarily scale data volume through web data collection. The $137\,661$ unified galaxies represent the complete and available real overlap of the highest scientific quality in the combination of \textit{Euclid} MER DR1 and \textit{\gls{DESI}} DR1 as of this date (July 2026). Scaling the dataset beyond this physical limit would compromise observational fidelity, introducing samples without spectroscopy or with defective images.
-
-\item \textbf{Data-centric approach (quality over quantity):} In the context of scientific multimodal models, observational noise (instrumental misalignments, images with black filter bands, and noisy spectra) penalizes convergence far more severely than a moderate token volume. The purging of more than $115\,000$ noisy objects ensures an extremely clean and physically consistent dataset, which accelerates learning and reduces overfitting by preventing the model from memorizing instrumental domain artifacts. This strategy aligns with the systematic curation methodology demonstrated by the \textit{DataComp} initiative \autocite{ar:gadre-2023}, where it has been shown that rigorous sample quality filtering outperforms raw noisy data scaling in terms of generalization and robustness.
-\end{enumerate}
-
 \subsection{Multimodal Adaptations of the Original Unimodal AstroPT Architecture} \label{sec:dev:arch}
 
 
@@ -145,16 +116,9 @@ To expand the capability of the \textit{AstroPT} framework from its unimodal con
 
 The design of different architectural solutions for \textit{AstroPT MM} is detailed below, based on three pillars: token mixing, the conclusions from the analysis with \textit{AION-1} discrete tokenizers, and the design of hybrid contrastive alignment through dual-phase attention.
 
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=\textwidth]{token_mixing_39633489699539445}
-	\caption[Tokenization scheme and token mixing scheduling]{Methodological diagram of data tokenization and unified sequence assembly. The \textit{Euclid} image cutout is divided into spatial patches of $m \times m$ pixels that are flattened and linearly projected to vectors. In parallel, the continuous \textit{\gls{DESI}} spectrum is divided into projected spectral flux channels of size $n$. The final mixed sequence entering the model is constructed by interleaving alternating dynamic blocks of $l$ visual and spectral tokens to avoid modal ordering bias. In this example, we show the object \textit{Euclid ID: $1827664214700920819$} \textit{\gls{DESI} TARGETID}: $39633489699539445$, whose image has been divided into 49 patches of $32\times32$ pixels, while the spectrum has been divided into channels of length $159$, for a total of $49$ spectral intervals.}
-	\label{fi:token_mixing_schema}
-\end{figure}
-
 \subsubsection{Block-Based Token Mixing} \label{sec:dev:tokmix}
 
-When sequences from different physical modalities are concatenated in a single causal autoregressive transformer, the model can suffer from spatial ordering bias by learning only to predict the modality placed at the end from the first one, rather than capturing bidirectional correlations. To mitigate this, we implemented a cross-token mixing scheme through a dynamic block-based turn scheduling.
+When sequences from different physical modalities are concatenated in a single causal autoregressive transformer, the model can suffer from spatial ordering bias by learning only to predict the modality placed at the end from the first one, rather than capturing bidirectional correlations. To mitigate this, we implemented a cross-token mixing scheme, \cref{fi:token_mixing_schema,fi:autoregressive-opt}.
 
 Mathematically, we define the mixed sequence of length $T$ for each object as the interleaving of blocks of size $B_{\text{size}} = 64$ tokens drawn from the \textit{Euclid} spatial patch sequences ($\mathbf{X}_{\text{img}} \in \mathbb{R}^{784 \times d_{\text{emb}}}$) and the \textit{\gls{DESI}} spectral patch sequences ($\mathbf{X}_{\text{spec}} \in \mathbb{R}^{779 \times d_{\text{emb}}}$):
 
@@ -171,8 +135,73 @@ This strategy has fundamental physical implications:
 \item \textbf{Invariance to ordering bias:} During pretraining, we activate randomization of the initial modality order, alternating whether the sequence begins with the visual block or the spectroscopic one.
 
 \item \textbf{Mitigation of modality forgetting due to sequence length:} When token sequences are very long, the model may cease to attend to its final tokens. If those final tokens always contain the same modality arranged in standard sequential order, that is, all consecutively, the model would be ignoring part of the information that this modality could contribute to learning.
+
+\item \textbf{Global Sequence Representation (The \texttt{[CLS]} Token):} A single learnable Classification Token (\texttt{[CLS]}) is appended exclusively at the very end of the interleaved sequence. Thanks to the causal attention mask, the physical patches (image and spectrum) never attend to this artificial token during their generative modeling, preventing contamination. However, being at the end, the \texttt{[CLS]} token attends to the entire physical sequence, acting as a dynamic aggregator that summarizes both modalities into a single high-quality embedding.
+
+\item \textbf{Exclusion of Expert Tokens:} Unlike contrastive architectures (such as the hybrid model detailed in \cref{sec:dev:exploratory}), this pure autoregressive sequence strictly omits intermediate unimodal \textit{Expert Tokens}. Inserting artificial global tokens at the beginning of the sequence would force the first real patch to be generated conditionally from an abstract static vector (a cold-start problem), disrupting the physical continuity of the probability density. Furthermore, in a purely causal paradigm without a contrastive loss, they act as redundant parameters with no active predictive function.
 \end{itemize}
 
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\textwidth]{token_mixing_39633489699539445}
+	\caption[Tokenization scheme and token mixing scheduling]{Methodological diagram of data tokenization and unified sequence assembly. The \textit{Euclid} image cutout is divided into spatial patches of $m \times m$ pixels that are flattened and linearly projected to vectors. In parallel, the continuous \textit{\gls{DESI}} spectrum is divided into projected spectral flux channels of size $n$. The final mixed sequence entering the model is constructed by interleaving alternating dynamic blocks of $l$ visual and spectral tokens to avoid modal ordering bias. In this example, we show the object \textit{Euclid ID: $1827664214700920819$} \textit{\gls{DESI} TARGETID}: $39633489699539445$, whose image has been divided into 49 patches of $32\times32$ pixels, while the spectrum has been divided into channels of length $159$, for a total of $49$ spectral intervals.}
+	\label{fi:token_mixing_schema}
+\end{figure}
+
+
+\subsubsection{Relationship with Model Parameters and Scaling Laws}
+
+According to the initialization and optimizer logs of our model, the \textit{AstroPT MM} architecture has a total of $100\,750\,849$ parameters ($\sim 100.75$ million), broken down as follows:
+
+\begin{itemize}
+\item \texttt{backbone\_decay} (Transformer body parameters with weight decay): $86\,511\,360$ parameters.
+\item \texttt{EuclidImage\_decay} (\textit{Euclid} visual encoder projection): $7\,864\,320$ parameters.
+\item \texttt{DESISpectrum\_decay} (\textit{\gls{DESI}} spectral encoder projection): $6\,352\,896$ parameters.
+\item \texttt{backbone\_nodecay} (Normalization parameters and biases without weight decay): $22\,273$ parameters.
+\end{itemize}
+
+If we compare the number of model parameters ($N \approx 100.75$ million) with the number of tokens in the final clean dataset ($D \approx 215.16$ million), we observe a token-to-parameter ratio of approximately $\mathbf{2.1:1}$.
+
+Under the Chinchilla scaling laws \autocite{ar:hoffmann-2022}, optimal pretraining from scratch requires the number of tokens to be approximately 20 times the number of parameters ($D \approx 20 \cdot N$). For a model with $100.75$ million parameters, this would require a pretraining set of at least $2.01$ billion tokens, meaning that our dataset is in a suboptimal token regime if the goal were to pretrain the entire transformer and its backbone architectures in a classical autoregressive manner from scratch. To reach the optimal regime, a total of $1\,289\,199$ objects with their corresponding image-spectrum pairs would be required.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1.0\textwidth]{AstroPT-MM-Autoregressive-Opt}
+	\caption[Diagram of the AstroPT MM Autoregressive Opt model architecture]{Conceptual diagram of the bimodal processing in the \textit{AstroPT MM Autoregressive Opt} architecture. The input sequence is constructed via a token mixing strategy, alternating blocks of visual patches from \textit{Euclid} images and spectral tokens from \textit{\gls{DESI}} spectra, concluding with a global \texttt{[CLS]} token. During pretraining, a lower-triangular causal self-attention mask is applied, compelling the autoregressive mechanism to iteratively predict the next token in the sequence based strictly on the preceding multimodal context.}
+	\label{fi:autoregressive-opt}
+\end{figure}
+
+\subsection{Optimization Protocols and Pretraining Baselines} \label{sec:dev:opt}
+
+The joint pretraining of galaxy images and spectra is penalized by an inherent imbalance in the optimization dynamics. Individual galaxies are represented by 784 image tokens, while the spectra occupy 779 tokens. Since the visual image encoder learns low-spatial-frequency patterns very quickly, its gradients tend to dominate the optimizer, causing \textbf{extreme gradient attenuation} (gradient starvation) in the spectral branch, which encodes very fine emission line transitions and absorption peaks that are physically rich but numerically subtle.
+
+To counteract this asymmetry and achieve balanced pretraining of the optimized 100-million-parameter model, we implemented the following adaptations in the optimization protocol and hardware infrastructure:
+
+\subsubsection{Gradient Regime and Learning Rate Multipliers}
+
+\begin{itemize}
+\item \textbf{Asymmetric learning rates:} We introduce branch-specific learning rate multipliers in the \textit{AdamW} optimizer. We slow down the visual image encoder with a factor of $0.8$ and accelerate the spectral encoder with a factor of $1.35$, ensuring vigorous updates in the spectroscopic branch:
+    \begin{equation}
+    \eta_{\text{images}} = 0.8 \cdot \eta_0, \quad \eta_{\text{spectra}} = 1.35 \cdot \eta_0
+    \label{eq:learning_rates}
+    \end{equation}
+    
+\item \textbf{Asymmetric loss weighting:} We adjust the batch loss function weights to prioritize spectral reconstruction over visual reconstruction, setting a weight of $0.6$ for images and $1.4$ for spectra.
+
+\item \textbf{Gradient clipping threshold relaxation:} We increase the gradient norm clipping threshold from $1.0$ to $2.0$. By relaxing this threshold, we prevent the high-magnitude gradients from the visual branch from saturating the optimizer's clipping limit and spuriously reducing the spectral components.
+
+\item \textbf{Amplified cross-reconstruction loss:} During pretraining, a probability of \texttt{0.10} has been programmed for an entire modality to be masked in each batch. This approach aims to force the unmasked modality to reconstruct the masked one without any information about it. To this end, we activate the \textbf{cross-reconstruction loss}. Specifically, when the \textit{\gls{DESI}} spectrum is masked, the \textit{Euclid} encoder must reconstruct it in its entirety. To force the model to prioritize spectrum reconstruction from images, we multiply this cross-reconstruction loss toward the spectrum by a factor of $2.5$.
+
+\item \textbf{Optimizer parameters:} We employ \textit{AdamW} with a weight decay of $0.1$ to mitigate overfitting and adjust the second moment $\beta_2$ to $0.98$, which stabilizes the averaging of sparse spectral gradients.
+
+\item \textbf{Learnable modality embeddings:} To facilitate the network's unambiguous distinction of the physical origin of tokens in the mixed sequence, a set of learnable per-modality embedding vectors is introduced. These modality-specific embeddings (one for \textit{Euclid} and one for \textit{\gls{DESI}}) are added element-wise to the corresponding patch projections prior to the injection of positional embeddings and the start of self-attention in the backbone.
+\end{itemize}
+
+
+\subsection{Other Architectures Tested} \label{sec:dev:exploratory}
+
+During the development of AstroPT MM, we explored alternative architectural designs and tokenization strategies. Although these approaches were ultimately discarded or superseded by the reference autoregressive architecture, they provided crucial insights into the multimodal behavior of the network.
 
 \subsubsection{The Experiment with AION-1 Discrete Tokenizers}
 
@@ -193,7 +222,6 @@ However, experimental tests demonstrated that \textbf{this discrete approach pro
 \end{enumerate}
 
 In summary, it was determined to forgo the use of the pretrained discrete tokenizers from \textit{AION-1} because, in systematic evaluations through \textit{downstream tasks}, their performance was inferior in the vast majority of tests compared to direct representation through continuous patch embeddings. Additionally, the need to train a neural adapter to couple the \textit{Euclid} and \textit{\gls{HSC}} spaces introduced instabilities during optimization and represented a computational bottleneck. Although for future work, training a native discrete tokenizer optimized specifically for the \textit{Euclid} instrumental data is envisaged, the current sample of high-quality galaxies does not provide the critical data volume required to guarantee its correct pretraining and convergence.
-
 \subsubsection{Hybrid Contrastive Alignment Architecture} \label{sec:dev:hyb}
 
 To combine the autoregressive predictive capacity of \textit{AstroPT MM} with the intermodal alignment power of \textit{AstroCLIP}, we implemented a hybrid architecture of \textbf{hybrid contrastive alignment} through a \textbf{dual-phase attention} mechanism. An illustration of the \textbf{AstroPT MM Hybrid} architecture procedure can be visualized in \cref{fig:arquitectura_bimodal}.
@@ -211,12 +239,6 @@ During the first 6 layers of the transformer (out of 12 total in the network), t
 \item The global \texttt{[CLS]} token, located at the end of the sequence, attends to all patches and expert tokens from both modalities. Acting as an integrator, its self-attention mechanism is exempt from the unimodal isolation constraints and the causal mask, facilitating latent consolidation of bimodal information from the earliest layers.
 \end{itemize}
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=1.0\textwidth]{AstroPT_Hybrid_Model-Horizontal.png}
-	\caption[Diagram of the AstroPT MM Hybrid model architecture]{Conceptual diagram of the bimodal processing in the \textit{AstroPT MM Hybrid} architecture. The sequence with token mixing from \textit{Euclid} images and \textit{\gls{DESI}} spectra and the addition of expert tokens for each modality are illustrated. This is followed by Phase 1 with unimodal isolation through a per-modality mask that hides one from the other and the contrastive alignment layer, InfoNCE or \textit{\gls{CLIP}}-type loss, where the expert tokens are aligned. Finally, Phase 2 features standard autoregressive behavior.}
-	\label{fig:arquitectura_bimodal}
-\end{figure}
 
 \paragraph{Fusion Boundary and Contrastive Loss (Layer 6)}
 
@@ -247,6 +269,13 @@ Once the contrastive loss is computed at the boundary, the tokens of the unified
 
 From this point, the image and spectrum representations can interact freely through long-range self-attention. The model learns to model the joint bimodal probability density and the intermodal predictive transition throughout the fusion layers. At the end of the sequence, the global \texttt{[CLS]} token attends to all tokens of the unified sequence in the last normalization layer, acting like an anchor of the learning process.
 
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1.0\textwidth]{AstroPT_Hybrid_Model-Horizontal.png}
+	\caption[Diagram of the AstroPT MM Hybrid model architecture]{Conceptual diagram of the bimodal processing in the \textit{AstroPT MM Hybrid} architecture. The sequence with token mixing from \textit{Euclid} images and \textit{\gls{DESI}} spectra and the addition of expert tokens for each modality are illustrated. This is followed by Phase 1 with unimodal isolation through a per-modality mask that hides one from the other and the contrastive alignment layer, InfoNCE or \textit{\gls{CLIP}}-type loss, where the expert tokens are aligned. Finally, Phase 2 features standard autoregressive behavior.}
+	\label{fig:arquitectura_bimodal}
+\end{figure}
+
 \subsection{Latent Vector Extraction} \label{sec:dev:extraction}
 
 To evaluate the trained models through \textit{downstream tasks}, it is necessary to define a homogeneous protocol for extracting static feature vectors from the sequences of hidden states returned by the last layer of the model.
@@ -262,7 +291,7 @@ The output sequence from the last model layer is a matrix of dimensions $\mathbf
     \label{eq:mean_pooling}
     \end{equation}
 
-    This averaging summarizes the distributed spatial information from \textit{Euclid} and the distributed spectral physics from \textit{\gls{DESI}} into two dense unimodal vectors of equal dimensionality. These modalities will be evaluated in the \textit{downstream tasks} independently to assess the performance of each in isolation.
+    This averaging summarizes the distributed spatial information from \textit{Euclid} and the distributed spectral physics from \textit{\gls{DESI}} into two dense unimodal vectors of equal dimensionality. These modalities will be evaluated in the \textit{downstream tasks} independently to assess the performance of each in isolation. It is important to note that although exploratory architectures like the \textit{Hybrid} model (see \cref{sec:dev:exploratory}) incorporate unimodal Expert Tokens that could theoretically condense this information, the mean pooling protocol over the distributed patches was strictly applied across all models to extract these unimodal vectors. This ensures a completely fair 1:1 ablation comparison between architectures, guaranteeing that any performance variance in the downstream tasks is due solely to the learning paradigm (causal vs. contrastive) and not to differences in the latent space extraction mechanism.
 
     \item \textbf{Individual $\mathbf{L_2}$ Normalization:}
     To ensure that the disparity in numerical amplitudes of the image and spectral fluxes does not unbalance the joint representation, each unimodal vector is projected onto the unit hypersphere through $L_2$ normalization:
@@ -283,35 +312,11 @@ This unified extraction protocol allows all \textit{\gls{SSL}}-type models and a
 
 
 
-\subsection{Optimization Protocols and Pretraining Baselines} \label{sec:dev:opt}
-
-The joint pretraining of galaxy images and spectra is penalized by an inherent imbalance in the optimization dynamics. Individual galaxies are represented by 784 image tokens, while the spectra occupy 779 tokens. Since the visual image encoder learns low-spatial-frequency patterns very quickly, its gradients tend to dominate the optimizer, causing \textbf{extreme gradient attenuation} (gradient starvation) in the spectral branch, which encodes very fine emission line transitions and absorption peaks that are physically rich but numerically subtle.
-
-To counteract this asymmetry and achieve balanced pretraining of the optimized 100-million-parameter model, we implemented the following adaptations in the optimization protocol and hardware infrastructure:
-
-\subsubsection{Gradient Regime and Learning Rate Multipliers}
-
-\begin{itemize}
-\item \textbf{Asymmetric learning rates:} We introduce branch-specific learning rate multipliers in the \textit{AdamW} optimizer. We slow down the visual image encoder with a factor of $0.8$ and accelerate the spectral encoder with a factor of $1.35$, ensuring vigorous updates in the spectroscopic branch:
-    \begin{equation}
-    \eta_{\text{images}} = 0.8 \cdot \eta_0, \quad \eta_{\text{spectra}} = 1.35 \cdot \eta_0
-    \label{eq:learning_rates}
-    \end{equation}
-    
-\item \textbf{Asymmetric loss weighting:} We adjust the batch loss function weights to prioritize spectral reconstruction over visual reconstruction, setting a weight of $0.6$ for images and $1.4$ for spectra.
-
-\item \textbf{Gradient clipping threshold relaxation:} We increase the gradient norm clipping threshold from $1.0$ to $2.0$. By relaxing this threshold, we prevent the high-magnitude gradients from the visual branch from saturating the optimizer's clipping limit and spuriously reducing the spectral components.
-
-\item \textbf{Amplified cross-reconstruction loss:} During pretraining, a probability of \texttt{0.10} has been programmed for an entire modality to be masked in each batch. This approach aims to force the unmasked modality to reconstruct the masked one without any information about it. To this end, we activate the \textbf{cross-reconstruction loss}. Specifically, when the \textit{\gls{DESI}} spectrum is masked, the \textit{Euclid} encoder must reconstruct it in its entirety. To force the model to prioritize spectrum reconstruction from images, we multiply this cross-reconstruction loss toward the spectrum by a factor of $2.5$.
-
-\item \textbf{Optimizer parameters:} We employ \textit{AdamW} with a weight decay of $0.1$ to mitigate overfitting and adjust the second moment $\beta_2$ to $0.98$, which stabilizes the averaging of sparse spectral gradients.
-
-\item \textbf{Learnable modality embeddings:} To facilitate the network's unambiguous distinction of the physical origin of tokens in the mixed sequence, a set of learnable per-modality embedding vectors is introduced. These modality-specific embeddings (one for \textit{Euclid} and one for \textit{\gls{DESI}}) are added element-wise to the corresponding patch projections prior to the injection of positional embeddings and the start of self-attention in the backbone.
-\end{itemize}
-
 \subsection{Supervised Reference Models} \label{sec:dev:sup}
 
-To rigorously evaluate whether our multimodal foundation model \textit{AstroPT MM} learns rich latent representations that encode real physical laws, rather than mere superficial statistical correlations, we designed and trained two supervised reference architectures on the same catalog of $137\,661$ galaxies. These models were trained to directly estimate up to 16 key physical properties; that is, each model was individually trained 16 times. The reason for training them this many times corresponds to the intrinsic specialization of these models described in \cref{sec:in:versus}. The list of these properties can be consulted in \cref{sec:dat:params}. These supervised models serve as a direct comparison method against the latent representations extracted from \textit{AstroPT MM}. For these models we drew inspiration from the supervised comparison methodologies of reference architectures in the spectroscopic domain proposed in the frameworks of \textit{AstroCLIP} \autocite{ar:astroclip} and \textit{AION-1} \autocite{ar:aion-1}.
+To rigorously evaluate whether our multimodal foundation model \textit{AstroPT MM} learns rich latent representations that encode real physical laws, rather than mere superficial statistical correlations, we designed and trained two supervised reference architectures. It is crucial to note the data volume disparities introduced by our evaluation protocol to ensure a fair comparison with the latent \textit{\gls{MLP}} probes. While the self-supervised \textit{AstroPT MM} model was pretrained on the 80\% training split of the total catalog ($110\,077$ galaxies), the supervised baselines (as well as the \textit{\gls{MLP}} evaluation heads) were trained and evaluated exclusively on the remaining 20\% validation set ($27\,584$ galaxies). This validation subset was further internally split into an 80/20 ratio, meaning the supervised models were optimized on a maximum of $22\,067$ objects (less than a fifth of the total pretraining volume). This strict protocol ensures that both the \textit{\gls{MLP}} regressor and the supervised baseline models are exposed to the exact same amount of labeled data during their task-specific optimization.
+
+These models were trained to directly estimate up to 16 key physical properties; that is, each model was individually trained 16 times. The reason for training them this many times corresponds to the intrinsic specialization of these models described in \cref{sec:in:versus}. The list of these properties can be consulted in \cref{sec:dat:params}. These supervised models serve as a direct comparison method against the latent representations extracted from \textit{AstroPT MM}. For these models we drew inspiration from the supervised comparison methodologies of reference architectures in the spectroscopic domain proposed in the frameworks of \textit{AstroCLIP} \autocite{ar:astroclip} and \textit{AION-1} \autocite{ar:aion-1}.
 
 \subsubsection{Supervised ResNet18 for Images (Morphology)}
 
@@ -345,6 +350,33 @@ This hybrid Conv1D+Transformer supervised model represents the spectral referenc
 
 
 
+\subsection{Computing Resources}
+
+\begin{table}[h]
+	\centering
+	\caption[Technical comparison of current foundation models for astronomy]{Technical comparison of model size by number of parameters, number of objects in the pretraining dataset, hardware used for pretraining, and estimated pretraining time.}
+	\label{tab:comparacion_modelos}
+	\begin{tabularx}{\textwidth}{l C C C C}
+		\toprule
+		\textbf{Metric} & \textbf{AstroCLIP} & \textbf{AION-1} & \textbf{AstroPT} & \textbf{AstroPT MM} \\ 
+		\midrule
+		\textbf{Number of parameters} & $\sim 150\ \si{M}$ & $300\ \si{M}\ \text{to}\ 3.1\ \si{B}$ & $1\ \si{M}\ \text{to}\ 2.1\ \si{B}$ & $\sim 100.75\ \si{M}$ \\ 
+		\textbf{Dataset} & $1.5\ \si{M}\ \text{Pairs}$ & $200\ \si{M}\ \text{Objects}$ & $8.6\ \si{M}\ \text{Images}$ & $137\,661\ \text{Pairs}$ \\ 
+		\textbf{Hardware (\glspl{GPU})} & $16 \times \text{H100} $ & $288\times \text{H100}$ &  & $4 \times \text{A100} $ \\
+		\textbf{Pretraining time} & $48\ \si{h}$ & $3.5\ \si{d}$ & & $36\ \si{h}$   \\ 
+		\bottomrule
+	\end{tabularx}
+\end{table}
+
+The development of \textit{\glspl{MFM}} in astrophysics demands massive supercomputing infrastructure. Unlike the pretraining of small models, pretraining foundation models requires concurrently scaling the model parameters, the datasets, and the computational capacity in \textit{\gls{FLOPS}}, following strict scaling laws.
+
+\cref{tab:comparacion_modelos} compares the model parameters, data scale, and hardware demands of the pretraining of \textit{AstroPT MM} against other foundation models from the recent astrophysics literature: \textit{AstroCLIP} \autocite{ar:astroclip}, \textit{AION-1} \autocite{ar:aion-1}, and \textit{AstroPT} \autocite{ar:astropt}.
+
+The computing capacity for this work was provided by the \textit{TeideHPC} infrastructure \autocite{ar:teidehpc}. Although the initial computational cost of pretraining is high, the resulting model can be employed in various \textit{downstream tasks} without the need to train its layers from scratch. This optimizes resource consumption in subsequent experiments compared to the repeated pretraining of independent supervised models.
+
+
+
+
 \subsection{Nomenclature of the Different Trained Architectures} \label{sec:dev:names}
 
 The set of hyperparameters and optimizations described constitutes the result of a systematic exploration of more than 30 pretraining runs with different architectures and their parameter variations, trained and evaluated during the development of this project. Therefore, to differentiate some of the architectures against which the final \textit{AstroPT MM} model will be compared in \cref{sec:res}, a reference list is included:
@@ -352,7 +384,7 @@ The set of hyperparameters and optimizations described constitutes the result of
 \begin{itemize}
 	\item \textbf{Autoregressive Opt}: Model with a purely standard autoregressive architecture, with token mixing and optimized training parameters. \textbf{It is the best model and it is used as the reference}.
 	
-	\item \textbf{Autoregressive 15M}: Model with a purely standard autoregressive architecture, with token mixing and optimized training parameters. It differs from the \textit{Autoregressive Opt} in that its size is 15 million parameters, compared to the 100 million of the reference model. To achieve this size, the number of layers was reduced to 6, the number of heads to 6, and the latent vector dimensionality to $d_{\text{emb}} = 384$. This is a comparative that quantifies performance based on changes in model size.
+	\item \textbf{Autoregressive 15M}: Model with a purely standard autoregressive architecture, with token mixing and optimized training parameters. It differs from the \textit{Autoregressive Opt} in that its size is 15 million parameters, compared to the 100 million of the reference model. To achieve this size, the number of layers was reduced to 6, the number of heads to 6, and the latent vector dimensionality to $d_{\text{emb}} = 384$. This is a comparative analysis that quantifies performance based on changes in model size.
 	
 	\item \textbf{No Tok Mix}: Model with a purely standard autoregressive architecture and optimized parameters, but \emph{without} token mixing. Model trained to evaluate the performance contribution of token mixing for sequence construction.
 	
